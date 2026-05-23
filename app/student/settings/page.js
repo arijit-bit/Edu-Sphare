@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/theme-provider";
+import { useLanguage } from "@/components/language-provider";
 import { StudentShell } from "../student-ui";
 import {
   Card,
@@ -63,7 +64,7 @@ import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { language, setLanguage, t, options } = useLanguage();
 
   // Profile data state
   const [profile, setProfile] = useState({
@@ -90,8 +91,6 @@ export default function SettingsPage() {
 
   // Data privacy consent state
   const [analyticsConsent, setAnalyticsConsent] = useState(true);
-  const [language, setLanguage] = useState("en");
-
   // Modals visibility state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -111,10 +110,6 @@ export default function SettingsPage() {
 
   // Toast notifications state
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const triggerToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -170,12 +165,10 @@ export default function SettingsPage() {
     triggerToast("Account deletion request submitted to administration.", "error");
   };
 
-  if (!mounted) return null;
-
   return (
     <StudentShell
-      title="Settings"
-      subtitle="Manage your Edu Sphare profile, preferences, notifications, and security."
+      title={t("Settings")}
+      subtitle={t("Manage your Edu Sphare profile, preferences, notifications, and security.")}
     >
       {/* Toast Alert */}
       {toast.show && (
@@ -221,7 +214,7 @@ export default function SettingsPage() {
               className="gap-2"
             >
               <User className="h-4 w-4" />
-              Edit Profile
+              {t("Edit Profile")}
             </Button>
           </div>
         </CardContent>
@@ -232,7 +225,7 @@ export default function SettingsPage() {
         {/* GROUP 1: Account Settings */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-            Account Settings
+            {t("Account Settings")}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Setting 1: Profile Info */}
@@ -248,9 +241,9 @@ export default function SettingsPage() {
                   <User className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Profile Information</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Profile Information")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Update your name, email address, and contact number.
+                    {t("Update your name, email address, and contact number.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -267,9 +260,9 @@ export default function SettingsPage() {
                   <Lock className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Security & Password</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Security & Password")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Manage your credentials, password reset history, and 2FA.
+                    {t("Manage your credentials, password reset history, and 2FA.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -286,9 +279,9 @@ export default function SettingsPage() {
                   <Users className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Linked Guardians</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Linked Guardians")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    View list of verified parent or guardian profiles connected.
+                    {t("View list of verified parent or guardian profiles connected.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -300,7 +293,7 @@ export default function SettingsPage() {
         {/* GROUP 2: Preferences */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-            Preferences & Theme
+            {t("Preferences & Theme")}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Setting 4: Notifications */}
@@ -313,9 +306,9 @@ export default function SettingsPage() {
                   <Bell className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Notifications</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Notifications")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Configure notifications across SMS, email, and mobile push.
+                    {t("Configure notifications across SMS, email, and mobile push.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -332,9 +325,9 @@ export default function SettingsPage() {
                   <Globe className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Language</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Language")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Choose system language and text sizing preferences.
+                    {t("Choose system language and text sizing preferences.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -351,9 +344,9 @@ export default function SettingsPage() {
                   <Palette className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Theme & Display</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Theme & Display")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Switch between Light, Dark, or System visual mode.
+                    {t("Switch between Light, Dark, or System visual mode.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -365,7 +358,7 @@ export default function SettingsPage() {
         {/* GROUP 3: Privacy & Data */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-            Security & Data Management
+            {t("Security & Data Management")}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Setting 7: Privacy Policy */}
@@ -378,9 +371,9 @@ export default function SettingsPage() {
                   <Shield className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Privacy & Security</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Privacy & Security")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Manage diagnostic sharing options and privacy consent.
+                    {t("Manage diagnostic sharing options and privacy consent.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
@@ -401,11 +394,11 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-foreground">Download Data</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("Download Data")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
                     {downloading
-                      ? `Generating export... ${downloadProgress}%`
-                      : "Export all your grades, schedule, and attendance data."}
+                      ? t("Generating export... {progress}%", { progress: downloadProgress })
+                      : t("Export all your grades, schedule, and attendance data.")}
                   </p>
                   {downloading && (
                     <Progress value={downloadProgress} className="h-1 mt-2 bg-muted" />
@@ -425,9 +418,9 @@ export default function SettingsPage() {
                   <Trash2 className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-destructive">Delete Account</h4>
+                  <h4 className="font-bold text-sm text-destructive">{t("Delete Account")}</h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Request permanent account deletion and data scrubbing.
+                    {t("Request permanent account deletion and data scrubbing.")}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-destructive/60 mt-1 shrink-0" />
@@ -442,10 +435,10 @@ export default function SettingsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Support & Resources
+            {t("Support & Resources")}
           </CardTitle>
           <CardDescription className="text-xs">
-            Quick links to access help docs or get in touch with the school administrators.
+            {t("Quick links to access help docs or get in touch with the school administrators.")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -454,37 +447,37 @@ export default function SettingsPage() {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => triggerToast("Launching Help Center docs...")}
+              onClick={() => triggerToast(t("Help Center"))}
             >
               <HelpCircle className="h-4 w-4" />
-              Help Center
+              {t("Help Center")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => triggerToast("Opening ticketing system...")}
+              onClick={() => triggerToast(t("Contact Support"))}
             >
               <PhoneCall className="h-4 w-4" />
-              Contact Support
+              {t("Contact Support")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => triggerToast("Opening bug report form...")}
+              onClick={() => triggerToast(t("Report a Bug"))}
             >
               <Bug className="h-4 w-4" />
-              Report a Bug
+              {t("Report a Bug")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => triggerToast("Redirecting to school feedback tool...")}
+              onClick={() => triggerToast(t("Give Feedback"))}
             >
               <MessageSquare className="h-4 w-4" />
-              Give Feedback
+              {t("Give Feedback")}
             </Button>
           </div>
         </CardContent>
@@ -720,23 +713,37 @@ export default function SettingsPage() {
       <Dialog open={isLanguageOpen} onOpenChange={setIsLanguageOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Language & Sizing</DialogTitle>
+            <DialogTitle>{t("Language")}</DialogTitle>
             <DialogDescription>
-              Set display language and text size settings for the application portal.
+              {t("Choose system language and text sizing preferences.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>System Language</Label>
-              <Select value={language} onValueChange={(val) => {
-                setLanguage(val);
+              <Label>{t("System Language")}</Label>
+              <Select
+                value={language}
+                onValueChange={(val) => {
+                  setLanguage(val);
+                  const selected = options.find((option) => option.value === val)?.label || val;
+                  triggerToast(t("Language switched to {language}", { language: t(selected) }));
+                  return;
+                  if (val === "hi") {
+                    triggerToast("Language switched to Hindi (हिन्दी)");
+                    return;
+                  }
+                  if (val === "bn") {
+                    triggerToast("Language switched to Bengali (বাংলা)");
+                    return;
+                  }
                 triggerToast(`Language switched to ${val === "en" ? "English" : val === "hi" ? "Hindi (हिन्दी)" : val === "es" ? "Spanish (Español)" : "French (Français)"}`);
               }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Language" />
+                  <SelectValue placeholder={t("Select Language")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English (US)</SelectItem>
+                  <SelectItem value="bn">Bengali (বাংলা)</SelectItem>
                   <SelectItem value="hi">Hindi (हिन्दी)</SelectItem>
                   <SelectItem value="es">Spanish (Español)</SelectItem>
                   <SelectItem value="fr">French (Français)</SelectItem>

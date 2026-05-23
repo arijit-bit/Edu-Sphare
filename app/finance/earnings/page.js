@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { FinanceShell, PageHeader, StatCard } from "@/app/finance/analytics-ui";
+import { DistributionDonutChart } from "@/components/finance/distribution-donut-chart";
 import { EarningsComparisonChart } from "@/components/finance/earnings-comparison-chart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,14 +38,13 @@ const EARNINGS_BY_RANGE = {
       { label: "Other Income", value: "₹41.3L", delta: "+5.8% activities", icon: BarChart2, tone: "teal" },
     ],
     distribution: [
-      { label: "Tuition Fees", value: "62%", color: "#3d5af1" },
-      { label: "Transport Fees", value: "11%", color: "#0ea5e9" },
-      { label: "Admission Fees", value: "9%", color: "#0d9488" },
-      { label: "Exam Fees", value: "5%", color: "#d97706" },
-      { label: "Hostel & Canteen", value: "7%", color: "#f59e0b" },
-      { label: "Other Income", value: "6%", color: "#94a3b8" },
+      { key: "tuition", label: "Tuition Fees", value: 62, color: "#3d5af1" },
+      { key: "transport", label: "Transport Fees", value: 11, color: "#0ea5e9" },
+      { key: "admission", label: "Admission Fees", value: 9, color: "#0d9488" },
+      { key: "exam", label: "Exam Fees", value: 5, color: "#d97706" },
+      { key: "hostel", label: "Hostel & Canteen", value: 7, color: "#f59e0b" },
+      { key: "other", label: "Other Income", value: 6, color: "#94a3b8" },
     ],
-    conic: "conic-gradient(#3d5af1 0% 62%, #0ea5e9 62% 73%, #0d9488 73% 82%, #d97706 82% 87%, #f59e0b 87% 94%, #94a3b8 94% 100%)",
     growth: "+18.4%",
     totalLabel: "₹8.96Cr",
   },
@@ -59,14 +59,13 @@ const EARNINGS_BY_RANGE = {
       { label: "Other Income", value: "₹9.1L", delta: "+4.1% activities", icon: BarChart2, tone: "teal" },
     ],
     distribution: [
-      { label: "Tuition Fees", value: "71%", color: "#3d5af1" },
-      { label: "Transport Fees", value: "10%", color: "#0ea5e9" },
-      { label: "Admission Fees", value: "13%", color: "#0d9488" },
-      { label: "Exam Fees", value: "2%", color: "#d97706" },
-      { label: "Hostel & Canteen", value: "3%", color: "#f59e0b" },
-      { label: "Other Income", value: "1%", color: "#94a3b8" },
+      { key: "tuition", label: "Tuition Fees", value: 71, color: "#3d5af1" },
+      { key: "transport", label: "Transport Fees", value: 10, color: "#0ea5e9" },
+      { key: "admission", label: "Admission Fees", value: 13, color: "#0d9488" },
+      { key: "exam", label: "Exam Fees", value: 2, color: "#d97706" },
+      { key: "hostel", label: "Hostel & Canteen", value: 3, color: "#f59e0b" },
+      { key: "other", label: "Other Income", value: 1, color: "#94a3b8" },
     ],
-    conic: "conic-gradient(#3d5af1 0% 71%, #0ea5e9 71% 81%, #0d9488 81% 94%, #d97706 94% 96%, #f59e0b 96% 99%, #94a3b8 99% 100%)",
     growth: "+15.2%",
     totalLabel: "₹2.15Cr",
   },
@@ -80,14 +79,13 @@ const EARNINGS_BY_RANGE = {
       { label: "Other Income", value: "₹1.9L", delta: "Canteen & activities", icon: BarChart2, tone: "teal" },
     ],
     distribution: [
-      { label: "Tuition Fees", value: "73%", color: "#3d5af1" },
-      { label: "Transport Fees", value: "7%", color: "#0ea5e9" },
-      { label: "Admission Fees", value: "12%", color: "#0d9488" },
-      { label: "Exam Fees", value: "5%", color: "#d97706" },
-      { label: "Hostel & Canteen", value: "2%", color: "#f59e0b" },
-      { label: "Other Income", value: "1%", color: "#94a3b8" },
+      { key: "tuition", label: "Tuition Fees", value: 73, color: "#3d5af1" },
+      { key: "transport", label: "Transport Fees", value: 7, color: "#0ea5e9" },
+      { key: "admission", label: "Admission Fees", value: 12, color: "#0d9488" },
+      { key: "exam", label: "Exam Fees", value: 5, color: "#d97706" },
+      { key: "hostel", label: "Hostel & Canteen", value: 2, color: "#f59e0b" },
+      { key: "other", label: "Other Income", value: 1, color: "#94a3b8" },
     ],
-    conic: "conic-gradient(#3d5af1 0% 73%, #0ea5e9 73% 80%, #0d9488 80% 92%, #d97706 92% 97%, #f59e0b 97% 99%, #94a3b8 99% 100%)",
     growth: "+12.8%",
     totalLabel: "₹72.4L",
   },
@@ -218,28 +216,23 @@ export default function TotalEarningsPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <div
-              className="relative h-40 w-40 rounded-full shadow-inner transition-transform duration-300 hover:scale-105 sm:h-44 sm:w-44"
-              style={{ background: data.conic }}
-            >
-              <div className="absolute inset-4 flex rounded-full bg-card text-center shadow-sm">
-                <div className="m-auto">
-                  <span className="text-base font-black text-foreground">{data.totalLabel}</span>
-                  <span className="block text-[10px] font-bold text-muted-foreground">total income</span>
-                </div>
-              </div>
-            </div>
+            <DistributionDonutChart
+              data={data.distribution}
+              centerLabel={data.totalLabel}
+              footerLabel="Total Income"
+              className="mx-auto aspect-square h-[220px] max-h-[240px]"
+            />
             <div className="w-full space-y-1.5">
               {data.distribution.map((item) => (
                 <div
-                  key={item.label}
+                  key={item.key}
                   className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-xs font-semibold text-muted-foreground"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: item.color }} />
                     <span className="truncate">{item.label}</span>
                   </span>
-                  <span className="font-black text-foreground">{item.value}</span>
+                  <span className="font-black text-foreground">{item.value}%</span>
                 </div>
               ))}
             </div>

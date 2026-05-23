@@ -13,22 +13,15 @@ export function ThemeProvider({
   storageKey = "edu-sphare-theme",
   ...props
 }) {
-  const [theme, setThemeState] = React.useState("system");
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    const savedTheme = localStorage.getItem(storageKey);
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    } else {
-      setThemeState(defaultTheme);
+  const [theme, setThemeState] = React.useState(() => {
+    if (typeof window === "undefined") {
+      return defaultTheme;
     }
-    setMounted(true);
-  }, [defaultTheme, storageKey]);
+
+    return localStorage.getItem(storageKey) || defaultTheme;
+  });
 
   React.useEffect(() => {
-    if (!mounted) return;
-
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
 
@@ -61,7 +54,7 @@ export function ThemeProvider({
     } else {
       root.classList.add(theme);
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   const setTheme = (newTheme) => {
     localStorage.setItem(storageKey, newTheme);

@@ -106,7 +106,7 @@ export function FinanceShell({ children, title = "Finance" }) {
   const [notifOpen, setNotifOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen overflow-x-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 border-r bg-card">
         <SidebarContent pathname={pathname} />
@@ -123,7 +123,7 @@ export function FinanceShell({ children, title = "Finance" }) {
       </Sheet>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col lg:pl-64">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden size-8" onClick={() => setMobileOpen(true)}>
@@ -165,8 +165,10 @@ export function FinanceShell({ children, title = "Finance" }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 md:p-6 animate-slide-up">
-          {children}
+        <main className="min-w-0 flex-1 overflow-x-hidden animate-slide-up px-3 py-4 sm:px-4 md:px-6 md:py-6">
+          <div className="mx-auto flex min-w-0 w-full max-w-[1400px] flex-col gap-5 sm:gap-6">
+            {children}
+          </div>
         </main>
 
         {/* Mobile Bottom Nav */}
@@ -201,12 +203,12 @@ export function FinanceShell({ children, title = "Finance" }) {
 /* ── Shared UI primitives ── */
 export function PageHeader({ title, subtitle, action }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="max-w-3xl">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-[1.75rem]">{title}</h2>
         {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="w-full shrink-0 sm:w-auto [&>*]:w-full sm:[&>*]:w-auto">{action}</div>}
     </div>
   );
 }
@@ -223,14 +225,14 @@ export function StatCard({ label, value, delta, icon: Icon, tone = "blue", class
   };
   const t = tones[tone] || tones.blue;
   return (
-    <div className={cn("rounded-xl border bg-card p-5 shadow-sm hover:shadow-md transition-shadow", className)}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={cn("rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5", className)}>
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className={cn("size-10 rounded-lg flex items-center justify-center", t.bg)}>
           {Icon && <Icon className={cn("size-5", t.icon)} />}
         </div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right leading-tight">{label}</p>
+        <p className="max-w-[11rem] text-right text-[11px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground sm:text-xs">{label}</p>
       </div>
-      <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{value}</p>
       {delta && <p className={cn("text-xs font-semibold mt-1", t.delta)}>{delta}</p>}
     </div>
   );

@@ -7,6 +7,7 @@ import {
   GraduationCap, Users, BarChart3, Shield,
   Eye, EyeOff, ArrowRight, Mail, Lock, User, Phone
 } from "lucide-react";
+import { DesktopAuthArt } from "@/components/auth/desktop-auth-art";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,44 +55,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-2/5 flex-col justify-between p-12 bg-gradient-to-br from-teal-600 via-teal-700 to-primary text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 70% 30%, white 0%, transparent 60%)" }} />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <GraduationCap className="size-5" />
-            </div>
-            <span className="text-xl font-bold">Edu Sphare</span>
-          </div>
-          <div className="mt-16">
-            <h1 className="text-4xl font-bold leading-tight">Join Edu Sphare today</h1>
-            <p className="mt-4 text-white/70 text-lg">
-              Create your account to access world-class school management tools.
-            </p>
-          </div>
-        </div>
-        <div className="relative z-10">
-          {[
-            "Secure role-based access",
-            "Real-time academic tracking",
-            "Automated fee management",
-            "Smart performance analytics",
-          ].map((f) => (
-            <div key={f} className="flex items-center gap-3 py-2.5">
-              <div className="flex size-6 items-center justify-center rounded-full bg-white/20">
-                <ArrowRight className="size-3" />
-              </div>
-              <span className="text-sm text-white/80">{f}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="min-h-screen bg-background flex lg:h-screen lg:overflow-hidden">
+      <DesktopAuthArt />
 
       {/* Right Form */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-md">
+      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto p-6 lg:h-screen lg:w-1/2 lg:flex-none lg:overflow-y-auto lg:p-12">
+        <div className="w-full max-w-md lg:min-h-fit">
           {/* Mobile Brand */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

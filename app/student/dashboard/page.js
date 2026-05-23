@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { StudentShell, ProgressRing } from "../student-ui";
 import {
   Card,
@@ -42,7 +42,7 @@ import {
   User,
   MapPin,
   Mail,
-  ExternalLink,
+  Pencil,
   Star,
   Plus,
 } from "lucide-react";
@@ -199,11 +199,7 @@ const dayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 export default function CombinedStudentDashboardPage() {
   const [toastMessage, setToastMessage] = useState("");
-  const [currentDayIndex, setCurrentDayIndex] = useState(1); // Default to 1 (Monday)
-
-  useEffect(() => {
-    setCurrentDayIndex(new Date().getDay());
-  }, []);
+  const [currentDayIndex] = useState(() => new Date().getDay());
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -223,23 +219,30 @@ export default function CombinedStudentDashboardPage() {
       <div className="space-y-6">
         {/* 1. Combined Profile Hero Card */}
         <Card className="overflow-hidden">
-          <div className="relative h-24 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-purple-500/10 border-b" />
-          <CardContent className="px-6 pb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 mb-2 text-center sm:text-left">
-              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-card shadow-lg shrink-0 -mt-10 sm:-mt-12 z-10">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-black">
-                  AM
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0 pb-1">
-                <div className="flex flex-col sm:flex-row items-center sm:items-baseline gap-2 justify-center sm:justify-start">
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground truncate">Aarav S. Malhotra</h2>
-                  <Badge variant="secondary" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 font-semibold h-5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1.5" />
-                    Online
-                  </Badge>
+          <CardContent className="relative px-4 py-4 sm:px-6 sm:py-5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-3 top-3 h-8 w-8 rounded-full border border-border/70 bg-background/80 text-muted-foreground shadow-sm backdrop-blur-sm hover:text-foreground sm:right-4 sm:top-4"
+              onClick={() => triggerToast("Navigating to Edit Profile settings...")}
+              aria-label="Edit profile"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-3 text-left sm:gap-4">
+              <div className="relative w-fit shrink-0">
+                <Avatar className="h-16 w-16 shrink-0 border-2 border-card shadow-md sm:h-18 sm:w-18">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl font-black">
+                    AM
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-card bg-emerald-500 shadow-sm" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center">
+                  <h2 className="text-lg font-bold text-foreground truncate sm:text-xl">Aarav S. Malhotra</h2>
                 </div>
-                <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 mt-1.5 text-xs text-muted-foreground">
+                <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <User className="h-3.5 w-3.5" /> Grade 12-A
                   </span>
@@ -251,9 +254,6 @@ export default function CombinedStudentDashboardPage() {
                   </span>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="shrink-0 gap-1.5 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto" onClick={() => triggerToast("Navigating to Edit Profile settings...")}>
-                <ExternalLink className="h-3.5 w-3.5" /> Edit Profile
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -294,7 +294,7 @@ export default function CombinedStudentDashboardPage() {
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-base font-bold">Today's Schedule</CardTitle>
+                    <CardTitle className="text-base font-bold">Today&apos;s Schedule</CardTitle>
                   <CardDescription>
                     {(() => {
                       const isWeekend = currentDayIndex === 0 || currentDayIndex === 6;
@@ -368,6 +368,30 @@ export default function CombinedStudentDashboardPage() {
                   })}
                 </div>
               </CardContent>
+            </Card>
+
+            <Card className="border-amber-500/20 bg-amber-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-600">
+                  <CreditCard className="h-4 w-4" />
+                  Outstanding Dues
+                </CardTitle>
+                <CardDescription className="text-[10px]">Term 2 · Due 30 May 2026</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Amount Due</span>
+                  <span className="font-bold text-foreground">₹12,500</span>
+                </div>
+                <Progress value={60} className="h-1.5" />
+                <p className="text-[10px] font-medium text-muted-foreground">60% paid – ₹7,500 remaining</p>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button size="sm" className="w-full text-xs font-bold" onClick={() => triggerToast("Opening fee transaction portal...")}>
+                  <CreditCard className="mr-1.5 h-3.5 w-3.5" />
+                  Pay Now
+                </Button>
+              </CardFooter>
             </Card>
           </div>
 
@@ -474,30 +498,6 @@ export default function CombinedStudentDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Pending Fee Banner */}
-            <Card className="border-amber-500/20 bg-amber-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
-                  <CreditCard className="h-4 w-4" />
-                  Outstanding Dues
-                </CardTitle>
-                <CardDescription className="text-[10px]">Term 2 · Due 30 May 2026</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Amount Due</span>
-                  <span className="font-bold text-foreground">₹12,500</span>
-                </div>
-                <Progress value={60} className="h-1.5" />
-                <p className="text-[10px] text-muted-foreground font-medium">60% paid – ₹7,500 remaining</p>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button size="sm" className="w-full text-xs font-bold" onClick={() => triggerToast("Opening fee transaction portal...")}>
-                  <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                  Pay Now
-                </Button>
-              </CardFooter>
-            </Card>
           </div>
         </div>
       </div>

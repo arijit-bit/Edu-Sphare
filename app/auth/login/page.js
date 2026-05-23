@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   GraduationCap, Users, BarChart3, Shield,
-  Eye, EyeOff, ArrowRight, CheckCircle, Lock, Mail
+  Eye, EyeOff, ArrowRight, Lock, Mail
 } from "lucide-react";
+import { DesktopAuthArt } from "@/components/auth/desktop-auth-art";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const roles = [
@@ -44,47 +44,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Brand Panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gradient-to-br from-primary via-primary/90 to-teal-600 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 30% 70%, white 0%, transparent 60%)" }} />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <GraduationCap className="size-5" />
-            </div>
-            <span className="text-xl font-bold">Edu Sphare</span>
-          </div>
-          <div className="mt-16">
-            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/20 border-white/30">
-              School Management Platform
-            </Badge>
-            <h1 className="text-4xl font-bold leading-tight">
-              Welcome back to your learning portal
-            </h1>
-            <p className="mt-4 text-white/70 text-lg">
-              Sign in to access your personalized dashboard, academic records, and school services.
-            </p>
-          </div>
-        </div>
-        <div className="relative z-10 grid grid-cols-2 gap-4">
-          {[
-            { label: "Students Active", value: "1,240" },
-            { label: "Faculty Members", value: "86"    },
-            { label: "Collection Rate", value: "92.4%" },
-            { label: "Years Running",   value: "12+"   },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-xl bg-white/10 backdrop-blur-sm p-4">
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-sm text-white/60">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="min-h-screen bg-background flex lg:h-screen lg:overflow-hidden">
+      <DesktopAuthArt />
 
       {/* Right Form Panel */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md">
+      <div className="flex flex-1 flex-col items-center justify-center p-6 lg:h-screen lg:w-1/2 lg:flex-none lg:overflow-y-auto lg:p-12">
+        <div className="w-full max-w-md lg:min-h-fit">
           {/* Mobile Brand */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

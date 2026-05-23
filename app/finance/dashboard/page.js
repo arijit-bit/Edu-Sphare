@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-
 import {
   FinanceShell,
   PageHeader,
   StatCard,
   StatusBadge,
 } from "@/app/finance/analytics-ui";
+import { DistributionDonutChart } from "@/components/finance/distribution-donut-chart";
 import { EarningsComparisonChart } from "@/components/finance/earnings-comparison-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,16 +28,13 @@ import {
 } from "lucide-react";
 
 const expenseCategories = [
-  { name: "Salaries", percent: 60, color: "#3d5af1" },
-  { name: "Maintenance", percent: 15, color: "#0d9488" },
-  { name: "Transport", percent: 10, color: "#d97706" },
-  { name: "Electricity", percent: 5, color: "#dc2626" },
-  { name: "Events", percent: 5, color: "#7c3aed" },
-  { name: "Misc", percent: 5, color: "#94a3b8" },
+  { key: "salaries", label: "Salaries", value: 60, color: "#3d5af1" },
+  { key: "maintenance", label: "Maintenance", value: 15, color: "#0d9488" },
+  { key: "transport", label: "Transport", value: 10, color: "#d97706" },
+  { key: "electricity", label: "Electricity", value: 5, color: "#dc2626" },
+  { key: "events", label: "Events", value: 5, color: "#7c3aed" },
+  { key: "misc", label: "Misc", value: 5, color: "#94a3b8" },
 ];
-
-const conicStr =
-  "conic-gradient(#3d5af1 0% 60%, #0d9488 60% 75%, #d97706 75% 85%, #dc2626 85% 90%, #7c3aed 90% 95%, #94a3b8 95% 100%)";
 
 const recentTransactions = [
   { id: "TXN-8841", name: "Aarav Sharma", type: "Fee", amount: "₹12,000", date: "20 May", status: "Paid" },
@@ -83,8 +79,6 @@ const earningsComparisonData = [
 ];
 
 export default function DashboardOverviewPage() {
-  const [hoveredSlice, setHoveredSlice] = useState(null);
-
   return (
     <FinanceShell title="Finance Overview">
       <PageHeader
@@ -144,36 +138,22 @@ export default function DashboardOverviewPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <div
-              className="relative h-40 w-40 rounded-full shadow-inner transition-transform duration-300 hover:scale-105 sm:h-44 sm:w-44"
-              style={{ background: conicStr }}
-            >
-              <div className="absolute inset-4 flex rounded-full bg-card text-center">
-                <div className="m-auto">
-                  <p className="text-base font-black text-foreground">
-                    {hoveredSlice !== null ? `${expenseCategories[hoveredSlice].percent}%` : "100%"}
-                  </p>
-                  <p className="mt-0.5 text-[10px] font-semibold text-muted-foreground">
-                    {hoveredSlice !== null ? expenseCategories[hoveredSlice].name : "Total Expense"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <DistributionDonutChart
+              data={expenseCategories}
+              centerLabel="100"
+              footerLabel="Total Expense"
+              className="mx-auto aspect-square h-[220px] max-h-[240px]"
+            />
             <div className="grid w-full gap-1.5 sm:grid-cols-2">
-              {expenseCategories.map((item, index) => (
+              {expenseCategories.map((item) => (
                 <div
-                  key={item.name}
-                  className={`cursor-pointer rounded-lg p-1.5 text-xs font-semibold transition-colors ${
-                    hoveredSlice === index ? "bg-muted font-bold text-foreground" : "text-muted-foreground"
-                  }`}
-                  onMouseEnter={() => setHoveredSlice(index)}
-                  onMouseLeave={() => setHoveredSlice(null)}
+                  key={item.key}
+                  className="rounded-lg bg-muted/50 p-2 text-xs font-semibold text-muted-foreground"
                 >
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: item.color }} />
-                    <span className="min-w-0 truncate">
-                      {item.name} ({item.percent}%)
-                    </span>
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span className="font-black text-foreground">{item.value}%</span>
                   </div>
                 </div>
               ))}

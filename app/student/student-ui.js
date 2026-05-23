@@ -2,11 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useTheme } from "@/components/theme-provider";
+import { useLanguage } from "@/components/language-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import {
-  Home,
   LayoutDashboard,
   TrendingUp,
   Calendar,
@@ -16,11 +15,7 @@ import {
   GraduationCap,
   Menu,
   Bell,
-  Sun,
-  Moon,
-  Laptop,
   ChevronRight,
-  BookOpen,
   Trophy,
 } from "lucide-react";
 
@@ -52,21 +47,26 @@ import {
 import { cn } from "@/lib/utils";
 
 /* ── Nav Config ── */
-export const studentNavItems = [
-  { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
-  { label: "Performance", href: "/student/performance", icon: TrendingUp },
-  { label: "Timetable", href: "/student/timetable", icon: Calendar },
-  { label: "Results", href: "/student/results", icon: FileText },
-  { label: "Feedback", href: "/student/feedback", icon: MessageSquare },
-  { label: "Settings", href: "/student/settings", icon: Settings },
-];
+function getStudentNavItems(t) {
+  return [
+    { label: t("Dashboard"), href: "/student/dashboard", icon: LayoutDashboard },
+    { label: t("Performance"), href: "/student/performance", icon: TrendingUp },
+    { label: t("Timetable"), href: "/student/timetable", icon: Calendar },
+    { label: t("Results"), href: "/student/results", icon: FileText },
+    { label: t("Feedback"), href: "/student/feedback", icon: MessageSquare },
+    { label: t("Settings"), href: "/student/settings", icon: Settings },
+  ];
+}
 
-const mobileNavItems = [
-  { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
-  { label: "Performance", href: "/student/performance", icon: TrendingUp },
-  { label: "Results", href: "/student/results", icon: FileText },
-  { label: "Feedback", href: "/student/feedback", icon: MessageSquare },
-];
+function getMobileNavItems(t) {
+  return [
+    { label: t("Dashboard"), href: "/student/dashboard", icon: LayoutDashboard },
+    { label: t("Performance"), href: "/student/performance", icon: TrendingUp },
+    { label: t("Timetable"), href: "/student/timetable", icon: Calendar },
+    { label: t("Results"), href: "/student/results", icon: FileText },
+    { label: t("Feedback"), href: "/student/feedback", icon: MessageSquare },
+  ];
+}
 
 /* ── ProgressRing SVG Component ── */
 export function ProgressRing({ value = 0, size = 80, strokeWidth = 8, color = "#3d5af1" }) {
@@ -141,6 +141,9 @@ function SidebarNavItem({ item, pathname, onClick }) {
 
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNavClick }) {
+  const { t } = useLanguage();
+  const studentNavItems = getStudentNavItems(t);
+
   return (
     <div className="flex h-full flex-col">
       {/* Brand */}
@@ -150,14 +153,14 @@ function SidebarContent({ pathname, onNavClick }) {
         </div>
         <div>
           <p className="text-sm font-black text-foreground leading-tight">Edu Sphare</p>
-          <p className="text-[11px] font-medium text-muted-foreground">Student Portal</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{t("Student Portal")}</p>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" aria-label="Student navigation">
         <p className="px-3 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-          Main Menu
+          {t("Main Menu")}
         </p>
         {studentNavItems.slice(0, 6).map((item) => (
           <SidebarNavItem
@@ -169,7 +172,7 @@ function SidebarContent({ pathname, onNavClick }) {
         ))}
         <Separator className="my-3" />
         <p className="px-3 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-          Preferences
+          {t("Preferences")}
         </p>
         {studentNavItems.slice(6).map((item) => (
           <SidebarNavItem
@@ -207,6 +210,8 @@ function SidebarContent({ pathname, onNavClick }) {
 /* ── useStudentNav hook ── */
 export function useStudentNav() {
   const pathname = usePathname() || "";
+  const { t } = useLanguage();
+  const studentNavItems = getStudentNavItems(t);
   const activeItem = studentNavItems.find(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
@@ -217,24 +222,28 @@ export function useStudentNav() {
 export function StudentShell({ children, title, subtitle }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t, dateLocale } = useLanguage();
+  const mobileNavItems = getMobileNavItems(t);
+  const translatedTitle = title ? t(title) : title;
+  const translatedSubtitle = subtitle ? t(subtitle) : subtitle;
 
   const notifications = [
     {
       icon: FileText,
-      text: "Math assignment due tomorrow",
-      time: "2h ago",
+      text: t("Math assignment due tomorrow"),
+      time: t("2h ago"),
       color: "text-blue-500",
     },
     {
       icon: Bell,
-      text: "Tech Fest registration is now open",
-      time: "5h ago",
+      text: t("Tech Fest registration is now open"),
+      time: t("5h ago"),
       color: "text-emerald-500",
     },
     {
       icon: Trophy,
       text: "Fee payment reminder – due in 3 days",
-      time: "1d ago",
+      time: t("1d ago"),
       color: "text-amber-500",
     },
   ];
@@ -249,12 +258,12 @@ export function StudentShell({ children, title, subtitle }) {
         </aside>
 
         {/* ══ MAIN CONTENT ══ */}
-        <div className="lg:pl-64 flex flex-col min-h-screen">
+        <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
 
           {/* Header */}
-          <header className="sticky top-0 z-30 flex items-center gap-3 justify-between px-4 md:px-6 h-14 bg-card/90 backdrop-blur-md border-b border-border shrink-0">
+          <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border bg-card/90 px-3 backdrop-blur-md sm:h-14 sm:gap-3 sm:px-4 md:px-6">
             {/* Left */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* Mobile hamburger via Sheet */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger
@@ -262,16 +271,16 @@ export function StudentShell({ children, title, subtitle }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="lg:hidden h-9 w-9"
-                      aria-label="Open navigation"
+                      className="h-8 w-8 lg:hidden sm:h-9 sm:w-9"
+                      aria-label={t("Open navigation")}
                     >
-                      <Menu className="h-5 w-5" />
+                      <Menu className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                     </Button>
                   }
                 />
                 <SheetContent side="left" className="w-64 p-0">
                   <SheetHeader className="sr-only">
-                    <SheetTitle>Navigation</SheetTitle>
+                    <SheetTitle>{t("Navigation")}</SheetTitle>
                   </SheetHeader>
                   <SidebarContent
                     pathname={pathname}
@@ -282,9 +291,9 @@ export function StudentShell({ children, title, subtitle }) {
 
               {title && (
                 <div className="hidden md:block">
-                  <p className="text-sm font-bold text-foreground leading-tight">{title}</p>
+                  <p className="text-sm font-bold leading-tight text-foreground">{translatedTitle}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date().toLocaleDateString("en-US", {
+                    {new Date().toLocaleDateString(dateLocale, {
                       weekday: "long",
                       month: "long",
                       day: "numeric",
@@ -295,22 +304,22 @@ export function StudentShell({ children, title, subtitle }) {
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               {/* Theme Toggle */}
               <ThemeToggle />
 
               {/* Bell Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notifications">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive border-2 border-card" />
+                  <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9" aria-label={t("Notifications")}>
+                    <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full border-2 border-card bg-destructive sm:right-1.5 sm:top-1.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>Notifications</span>
-                    <Badge variant="secondary" className="text-xs">3 new</Badge>
+                    <span>{t("Notifications")}</span>
+                    <Badge variant="secondary" className="text-xs">{t("3 new")}</Badge>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {notifications.map((n, i) => {
@@ -327,7 +336,7 @@ export function StudentShell({ children, title, subtitle }) {
                   })}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="justify-center text-xs text-primary font-medium">
-                    View all notifications
+                    {t("View all notifications")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -336,7 +345,7 @@ export function StudentShell({ children, title, subtitle }) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href="/student/settings">
-                    <Avatar className="h-8 w-8 cursor-pointer">
+                    <Avatar className="h-[30px] w-[30px] cursor-pointer sm:h-8 sm:w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                         AM
                       </AvatarFallback>
@@ -349,14 +358,14 @@ export function StudentShell({ children, title, subtitle }) {
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 px-4 md:px-6 py-6 pb-24 lg:pb-8 max-w-[1440px] w-full mx-auto">
+          <main className="mx-auto w-full max-w-[1440px] flex-1 px-3 py-4 pb-20 sm:px-4 md:px-6 md:py-6 md:pb-28 lg:pb-8">
             {(title || subtitle) && (
-              <div className="mb-6 animate-slide-up">
+              <div className="mb-4 animate-slide-up md:mb-6">
                 {title && (
-                  <h1 className="text-2xl font-black text-foreground leading-tight">{title}</h1>
+                  <h1 className="text-lg font-black leading-tight text-foreground sm:text-xl md:text-2xl">{translatedTitle}</h1>
                 )}
                 {subtitle && (
-                  <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm md:block hidden">{translatedSubtitle}</p>
                 )}
               </div>
             )}
@@ -372,7 +381,7 @@ export function StudentShell({ children, title, subtitle }) {
 
         {/* ══ MOBILE BOTTOM NAV ══ */}
         <nav
-          className="fixed bottom-0 left-0 z-50 w-full grid grid-cols-5 border-t border-border bg-card/95 backdrop-blur-md px-2 py-1.5 lg:hidden"
+          className="fixed bottom-0 left-0 z-50 grid w-full grid-cols-5 border-t border-border bg-card/95 px-2 py-1 backdrop-blur-md lg:hidden"
           aria-label="Mobile navigation"
         >
           {mobileNavItems.map((item) => {
@@ -386,14 +395,14 @@ export function StudentShell({ children, title, subtitle }) {
                 aria-current={isActive ? "page" : undefined}
                 aria-label={item.label}
                 className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold transition-all duration-200",
+                  "flex min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold transition-all duration-200 sm:text-[10px]",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                {item.label}
+                <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}

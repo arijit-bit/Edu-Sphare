@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/components/language-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +21,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} h-full`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <script
           id="theme-toggle-init"
@@ -29,7 +35,9 @@ export default function RootLayout({ children }) {
               (function() {
                 try {
                   var theme = localStorage.getItem('edu-sphare-theme') || 'system';
+                  var language = localStorage.getItem('edu-sphare-language') || 'en';
                   var root = document.documentElement;
+                  root.lang = language;
                   root.classList.remove('light', 'dark');
                   if (theme === 'system') {
                     var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -44,12 +52,14 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-full font-sans antialiased">
-        <ThemeProvider
-          defaultTheme="system"
-          storageKey="edu-sphare-theme"
-        >
-          {children}
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            defaultTheme="system"
+            storageKey="edu-sphare-theme"
+          >
+            {children}
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -346,9 +346,9 @@ export default function ReportsPage() {
               <FileText className="h-6 w-6" />
             </div>
             <h3 className="font-bold text-foreground text-lg">No reports found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Your search filters didn't return any financial statements. Try updating the keywords or selecting all statuses.
-            </p>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Your search filters didn&apos;t return any financial statements. Try updating the keywords or selecting all statuses.
+              </p>
           </CardContent>
         </Card>
       )}

@@ -28,7 +28,7 @@ function ChartContainer({ id, className, children, config, ...props }) {
       <div
         data-chart={chartId}
         className={cn(
-          "flex h-[260px] w-full items-center justify-center text-xs",
+          "flex h-[260px] min-w-0 w-full items-center justify-center text-xs",
           className
         )}
         {...props}
@@ -82,6 +82,7 @@ function ChartTooltipContent({
   formatter,
   indicator = "dot",
   className,
+  hideLabel = false,
 }) {
   const { config } = useChart();
 
@@ -96,9 +97,11 @@ function ChartTooltipContent({
         className
       )}
     >
-      <div className="mb-2 text-xs font-semibold text-muted-foreground">
-        {labelFormatter ? labelFormatter(label) : label}
-      </div>
+      {hideLabel ? null : (
+        <div className="mb-2 text-xs font-semibold text-muted-foreground">
+          {labelFormatter ? labelFormatter(label) : label}
+        </div>
+      )}
       <div className="space-y-1.5">
         {payload.map((item) => {
           const itemKey = item.dataKey;
@@ -141,7 +144,7 @@ function ChartLegend({ className, ...props }) {
       verticalAlign="bottom"
       align="left"
       iconType="circle"
-      wrapperStyle={{ paddingTop: 16 }}
+      wrapperStyle={{ paddingTop: 16, paddingLeft: 8, paddingRight: 8 }}
       content={(contentProps) => (
         <ChartLegendContent className={className} {...contentProps} />
       )}
@@ -158,7 +161,7 @@ function ChartLegendContent({ payload, className }) {
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2", className)}>
+    <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2 pl-1", className)}>
       {payload.map((item) => {
         const itemKey = item.dataKey;
         const itemConfig = config[itemKey] || {};

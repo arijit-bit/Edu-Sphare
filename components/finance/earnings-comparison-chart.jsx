@@ -36,13 +36,27 @@ export function EarningsComparisonChart({
   title,
   subtitle,
   className,
+  currentLabel = "Current Year",
+  previousLabel = "Previous Year",
+  valueFormatter = formatCompactCurrency,
 }) {
+  const mergedConfig = {
+    current: {
+      ...chartConfig.current,
+      label: currentLabel,
+    },
+    previous: {
+      ...chartConfig.previous,
+      label: previousLabel,
+    },
+  };
+
   return (
     <div className={className}>
-      <ChartContainer config={chartConfig} className="h-[240px] sm:h-[280px]">
+      <ChartContainer config={mergedConfig} className="h-[240px] sm:h-[280px]">
         <AreaChart
           data={data}
-          margin={{ top: 12, right: 8, left: -20, bottom: 0 }}
+          margin={{ top: 12, right: 12, left: 12, bottom: 0 }}
         >
           <defs>
             <linearGradient id="earnings-current-fill" x1="0" y1="0" x2="0" y2="1">
@@ -63,16 +77,16 @@ export function EarningsComparisonChart({
             axisLine={false}
             tickLine={false}
             tickMargin={10}
-            width={42}
+            width={52}
             className="text-[11px] fill-muted-foreground"
-            tickFormatter={formatCompactCurrency}
+            tickFormatter={valueFormatter}
           />
           <Tooltip
             cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }}
             content={
               <ChartTooltipContent
                 labelFormatter={(value) => `${title}: ${value}`}
-                formatter={(value) => formatCompactCurrency(value)}
+                formatter={(value) => valueFormatter(value)}
               />
             }
           />
