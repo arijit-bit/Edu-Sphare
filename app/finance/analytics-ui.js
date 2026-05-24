@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, CreditCard, ReceiptText, TrendingUp, TrendingDown,
-  BarChart3, Settings, Bell, Search, Download, Menu, X, Building2,
+  BarChart3, Settings, Bell, Search, Download, Menu, X, Building2, PencilLine,
   LogOut, User, Sun, Moon, Laptop, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export const navItems = [
   { label: "Dashboard",        href: "/finance/dashboard",         icon: LayoutDashboard, short: "Dashboard" },
   { label: "Student Payments", href: "/finance/student-payments",  icon: CreditCard,      short: "Payments"  },
   { label: "Teacher Payroll",  href: "/finance/teacher-payments",  icon: ReceiptText,     short: "Payroll"   },
-  { label: "Total Earnings",   href: "/finance/earnings",          icon: TrendingUp,      short: "Earnings"  },
-  { label: "Total Expenses",   href: "/finance/expenses",          icon: TrendingDown,    short: "Expenses"  },
+  { label: "Summary",          href: "/finance/summary",           icon: TrendingUp,      short: "Summary"   },
+  { label: "Audit",            href: "/finance/audit",             icon: PencilLine,      short: "Audit"     },
   { label: "Reports",          href: "/finance/reports",           icon: BarChart3,       short: "Reports"   },
   { label: "Settings",         href: "/finance/settings",          icon: Settings,        short: "Settings"  },
 ];
