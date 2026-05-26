@@ -62,7 +62,7 @@ export default function TeacherDashboard() {
             <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive" />
           </Button>
           <Avatar className="size-8 cursor-pointer">
-            <AvatarFallback className="bg-teal-600 text-white text-xs font-bold">RI</AvatarFallback>
+            <AvatarFallback className="bg-cyan-600 text-white text-xs font-bold">RI</AvatarFallback>
           </Avatar>
         </div>
       </header>

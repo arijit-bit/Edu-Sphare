@@ -5,6 +5,7 @@ import { Menu, FileText, BarChart3, AlertCircle, ShieldCheck } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useTeacherLayout } from "../layout";
 
 export default function MarksAuditPage() {
@@ -18,6 +19,9 @@ export default function MarksAuditPage() {
           <Menu className="size-4" />
         </Button>
         <h1 className="text-sm font-semibold">Marks Audit Portal</h1>
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Main Content */}
@@ -36,7 +40,7 @@ export default function MarksAuditPage() {
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="size-9 rounded-lg bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-[#111111] text-teal-400">
                   <FileText className="size-5" />
                 </div>
                 <div>
@@ -54,7 +58,7 @@ export default function MarksAuditPage() {
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="size-9 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-[#111111] text-amber-400">
                   <AlertCircle className="size-5" />
                 </div>
                 <div>
@@ -72,7 +76,7 @@ export default function MarksAuditPage() {
           <Card className="hover:shadow-md transition-shadow md:col-span-2 lg:col-span-1">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="size-9 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-[#111111] text-violet-400">
                   <BarChart3 className="size-5" />
                 </div>
                 <div>
@@ -90,7 +94,7 @@ export default function MarksAuditPage() {
 
         <Card className="border-dashed bg-muted/20">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center mb-4">
+            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-[#111111]">
               <FileText className="size-6 text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-lg text-foreground">Grade Verification & Auditing Logs</h3>

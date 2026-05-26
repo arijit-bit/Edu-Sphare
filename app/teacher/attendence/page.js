@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { format } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,6 +29,8 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import {
   Bell,
@@ -46,6 +50,8 @@ import {
   Clock3,
   X,
   XCircle,
+  Users2,
+  ChevronDown,
 } from "lucide-react";
 import { useTeacherLayout } from "../layout";
 
@@ -107,8 +113,18 @@ export default function TeacherAttendencePage() {
   const [subjectValue, setSubjectValue] = useState("Physics");
   const [periodValue, setPeriodValue] = useState("Period 1 (08:00 AM)");
   const [dateValue, setDateValue] = useState("2023-10-24");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [students, setStudents] = useState(studentsSeed);
+
+  const formattedDateLabel = useMemo(() => {
+    const parsed = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      return "Select date";
+    }
+
+    return format(parsed, "PPP");
+  }, [dateValue]);
 
   const filteredStudents = useMemo(() => {
     const search = searchValue.trim().toLowerCase();
@@ -153,7 +169,7 @@ export default function TeacherAttendencePage() {
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Class</label>
         <Select value={classValue} onValueChange={setClassValue}>
-          <SelectTrigger className="h-11 w-full rounded-xl bg-background">
+          <SelectTrigger className="h-11 w-full rounded-lg bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -167,7 +183,7 @@ export default function TeacherAttendencePage() {
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Section</label>
         <Select value={sectionValue} onValueChange={setSectionValue}>
-          <SelectTrigger className="h-11 w-full rounded-xl bg-background">
+          <SelectTrigger className="h-11 w-full rounded-lg bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -181,7 +197,7 @@ export default function TeacherAttendencePage() {
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Subject</label>
         <Select value={subjectValue} onValueChange={setSubjectValue}>
-          <SelectTrigger className="h-11 w-full rounded-xl bg-background">
+          <SelectTrigger className="h-11 w-full rounded-lg bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -194,21 +210,39 @@ export default function TeacherAttendencePage() {
 
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Date</label>
-        <div className="relative">
-          <Input
-            type="date"
-            value={dateValue}
-            onChange={(event) => setDateValue(event.target.value)}
-            className="h-11 rounded-xl bg-background pr-10"
-          />
-          <Calendar className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        </div>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+          <PopoverTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                data-empty={!dateValue}
+                className="h-11 w-full justify-between rounded-lg bg-background text-left font-normal data-[empty=true]:text-muted-foreground"
+              />
+            }
+          >
+            {dateValue ? <span>{formattedDateLabel}</span> : <span>Pick a date</span>}
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarPicker
+              mode="single"
+              selected={dateValue ? new Date(`${dateValue}T00:00:00`) : undefined}
+              onSelect={(selectedDate) => {
+                if (!selectedDate) return;
+                setDateValue(format(selectedDate, "yyyy-MM-dd"));
+                setDatePickerOpen(false);
+              }}
+              defaultMonth={dateValue ? new Date(`${dateValue}T00:00:00`) : undefined}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Period</label>
         <Select value={periodValue} onValueChange={setPeriodValue}>
-          <SelectTrigger className="h-11 w-full rounded-xl bg-background">
+          <SelectTrigger className="h-11 w-full rounded-lg bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -236,7 +270,7 @@ export default function TeacherAttendencePage() {
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
               placeholder="Search students, classes, or ID..."
-              className="h-10 rounded-xl bg-slate-100/50 dark:bg-slate-900/50 pl-10 pr-18 text-sm shadow-none focus-visible:ring-primary/20 transition-all border-border"
+              className="h-10 rounded-xl border-border bg-background pl-10 pr-18 text-sm shadow-none transition-all focus-visible:ring-primary/20"
             />
             {searchValue ? (
               <Button
@@ -250,17 +284,18 @@ export default function TeacherAttendencePage() {
                 <X className="size-3.5" />
               </Button>
             ) : null}
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              /
-            </span>
-            </div>
+          </div>
 
-            <div className="ml-auto hidden items-center gap-1 md:flex md:gap-2">
-              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
-                <Bell className="size-4.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
-                <CircleHelp className="size-4.5" />
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+          </div>
+
+          <div className="ml-auto hidden items-center gap-1 md:flex md:gap-2">
+            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
+              <Bell className="size-4.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
+              <CircleHelp className="size-4.5" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
               <Settings className="size-4.5" />
@@ -302,7 +337,7 @@ export default function TeacherAttendencePage() {
         </section>
 
         {/* Filter Section */}
-        <section className="rounded-2xl border border-border bg-white/60 dark:bg-slate-900/60 p-4 shadow-sm backdrop-blur-xl mb-6">
+        <section className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm backdrop-blur-xl">
           <div className="hidden md:block">
             {filtersForm}
           </div>
@@ -328,7 +363,8 @@ export default function TeacherAttendencePage() {
               Showing <span className="font-semibold text-foreground">{summary.total} students</span> in{" "}
               <span className="font-semibold text-foreground">Grade 10 - A ({subjectValue})</span>
             </p>
-            <Button className="h-10 rounded-xl shadow-sm">
+            <Button className="h-10 rounded-xl border border-cyan-800 bg-cyan-600/90 text-white shadow-sm hover:bg-cyan-500">
+              <Users2 className="mr-2 size-4" />
               Load Students
             </Button>
           </div>
@@ -342,10 +378,9 @@ export default function TeacherAttendencePage() {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold text-foreground">Quick Actions:</span>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={markAllPresent}
-                  className="h-8 rounded-md px-3 border-border bg-background text-foreground hover:bg-muted shadow-none"
+                  className="h-8 rounded-md border border-emerald-700 bg-emerald-600 px-3 text-white shadow-none hover:bg-emerald-500"
                 >
                   <CheckCircle2 className="mr-1.5 size-3.5" />
                   Mark All Present
@@ -438,7 +473,17 @@ export default function TeacherAttendencePage() {
               <div className="space-y-4 p-4 xl:hidden bg-muted/10">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
-                    <Card key={student.id} className="overflow-hidden border-border shadow-sm transition-all hover:shadow-md dark:bg-slate-900/80">
+                    <Card
+                      key={student.id}
+                      className={cn(
+                        "overflow-hidden border-border shadow-sm transition-all hover:shadow-md",
+                        student.status === "present"
+                          ? "border-emerald-900 bg-emerald-950/20"
+                          : student.status === "absent"
+                            ? "border-red-900 bg-red-950/20"
+                            : "bg-card"
+                      )}
+                    >
                       <CardContent className="p-4 flex flex-col gap-4">
                         <div className="flex items-center gap-4">
                           <Avatar className="size-12 border border-border/50 shadow-sm">
@@ -456,7 +501,7 @@ export default function TeacherAttendencePage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 bg-muted/20 p-3 rounded-xl border border-border/50">
+                        <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/20 p-3">
                           <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</label>
                           <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border/50 shadow-inner gap-0.5">
                             {statusOptions.map((option) => (
@@ -497,8 +542,9 @@ export default function TeacherAttendencePage() {
                     return (
                       <div
                         key={student.id}
+                        onClick={() => updateStatus(student.id, isPresent ? "absent" : "present")}
                         className={cn(
-                          "flex items-center justify-between p-4 transition-colors",
+                          "flex cursor-pointer items-center justify-between p-4 transition-colors",
                           isPresent
                             ? "bg-emerald-50/70 hover:bg-emerald-50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30"
                             : "bg-red-50/70 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/30"
@@ -517,7 +563,11 @@ export default function TeacherAttendencePage() {
                         </div>
 
                         <button
-                          onClick={() => updateStatus(student.id, isPresent ? "absent" : "present")}
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            updateStatus(student.id, isPresent ? "absent" : "present");
+                          }}
                           className={cn(
                             "flex h-9 w-9 items-center justify-center rounded-md text-xs font-bold transition-all active:scale-95 shrink-0",
                             isPresent
@@ -541,7 +591,7 @@ export default function TeacherAttendencePage() {
             )}
 
             {/* Action Bar */}
-            <div className="border-t border-border bg-background/50 dark:bg-slate-900/50 px-4 py-4 md:px-6">
+            <div className="border-t border-border bg-card px-4 py-4 md:px-6 pb-0">
               <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 text-sm text-muted-foreground">
                   <span className="bg-muted px-2 py-1 rounded-md">
@@ -560,7 +610,7 @@ export default function TeacherAttendencePage() {
                     Save
                     <Save className="ml-1 size-4" />
                   </Button>
-                  <Button className="h-10 rounded-xl shadow-sm">
+                  <Button className="h-10 rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-500">
                     Submit
                     <SendHorizontal className="ml-1 size-4" />
                   </Button>
