@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { FinanceShell, PageHeader, StatCard, StatusBadge } from "@/app/finance/analytics-ui";
+import { FinanceShell, PageHeader, StatusBadge } from "@/app/finance/analytics-ui";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -33,20 +32,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  BadgeIndianRupee,
-  Building2,
-  CalendarRange,
   Check,
   CircleDollarSign,
   ClipboardCheck,
   CreditCard,
-  Landmark,
-  ReceiptText,
   ShieldCheck,
   UserCheck,
-  Wallet,
 } from "lucide-react";
 
 const MONTH_OPTIONS = ["April 2026", "May 2026", "June 2026", "July 2026"];
@@ -75,7 +66,7 @@ const OTHER_DEFAULT = [
 const OTHER_CATEGORY_OPTIONS = ["Hostel", "Transportation", "Maintenance", "Admission", "Custom"];
 
 function formatCurrency(value) {
-  return `₹${value.toLocaleString("en-IN")}`;
+  return `Rs ${value.toLocaleString("en-IN")}`;
 }
 
 function formatModeLabel(mode, transactionId) {
@@ -107,7 +98,175 @@ function MonthPills({ selectedMonths, onToggle }) {
   );
 }
 
+function SummaryMetric({ label, value, hint, tone = "blue" }) {
+  const tones = {
+    blue: {
+      card: "border-blue-200/70 bg-blue-50/80 dark:border-blue-900/60 dark:bg-blue-950/20",
+      value: "text-blue-700 dark:text-blue-300",
+      hint: "text-blue-600/80 dark:text-blue-300/80",
+      dot: "bg-blue-500",
+    },
+    emerald: {
+      card: "border-emerald-200/70 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20",
+      value: "text-emerald-700 dark:text-emerald-300",
+      hint: "text-emerald-600/80 dark:text-emerald-300/80",
+      dot: "bg-emerald-500",
+    },
+    amber: {
+      card: "border-amber-200/70 bg-amber-50/85 dark:border-amber-900/60 dark:bg-amber-950/20",
+      value: "text-amber-700 dark:text-amber-300",
+      hint: "text-amber-700/80 dark:text-amber-300/80",
+      dot: "bg-amber-500",
+    },
+  };
+  const palette = tones[tone] || tones.blue;
+
+  return (
+    <div className={`min-w-[190px] shrink-0 rounded-2xl border p-3 shadow-sm sm:min-w-[210px] sm:p-4 ${palette.card}`}>
+      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:text-[11px] sm:tracking-[0.18em]">
+        <span className={`size-2 rounded-full ${palette.dot}`} />
+        {label}
+      </p>
+      <p className={`mt-1.5 text-lg font-bold tracking-tight sm:mt-2 sm:text-2xl ${palette.value}`}>
+        {value}
+      </p>
+      <p className={`mt-1 text-[11px] leading-snug sm:text-xs ${palette.hint}`}>
+        {hint}
+      </p>
+    </div>
+  );
+}
+
+function QueueHeader({ icon: Icon, title, description, countLabel }) {
+  return (
+    <div className="flex flex-col gap-3 border-b px-4 py-4 sm:px-6">
+      <div className="flex items-start gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <CardTitle className="text-base">{title}</CardTitle>
+          <CardDescription className="mt-1">{description}</CardDescription>
+        </div>
+      </div>
+      <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-3 py-2 text-sm">
+        <span className="font-medium text-foreground">Current work queue</span>
+        <span className="font-semibold text-muted-foreground">{countLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function TeacherAuditCards({ rows, onAudit }) {
+  return (
+    <div className="grid gap-3 md:hidden">
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground">{row.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.id} - {row.faculty}</p>
+            </div>
+            <StatusBadge status={row.status} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Salary</p>
+              <p className="mt-1 font-semibold text-foreground">{formatCurrency(row.salary)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Month</p>
+              <p className="mt-1 font-semibold text-foreground">{row.month}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="mt-4 w-full gap-2"
+            variant={row.status === "Paid" ? "outline" : "default"}
+            onClick={() => onAudit(row)}
+          >
+            <ClipboardCheck className="size-4" />
+            {row.status === "Paid" ? "Review payment" : "Audit payment"}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StudentAuditCards({ rows, onAudit }) {
+  return (
+    <div className="grid gap-3 md:hidden">
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground">{row.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.id} - Grade {row.grade}</p>
+            </div>
+            <StatusBadge status={row.status} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Fee / month</p>
+              <p className="mt-1 font-semibold text-foreground">{formatCurrency(row.fee)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Months</p>
+              <p className="mt-1 font-semibold text-foreground">{row.months.join(", ")}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="mt-4 w-full gap-2"
+            variant={row.status === "Paid" ? "outline" : "default"}
+            onClick={() => onAudit(row)}
+          >
+            <CreditCard className="size-4" />
+            {row.status === "Paid" ? "Review receipt" : "Audit receipt"}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LedgerCards({ rows }) {
+  return (
+    <div className="grid gap-3 md:hidden">
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-foreground">{row.category}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{row.date} - {row.month}</p>
+            </div>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${row.type === "Income" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"}`}>
+              {row.type}
+            </span>
+          </div>
+          <div className="mt-4 grid gap-2 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Amount</span>
+              <span className="font-semibold text-foreground">{formatCurrency(row.amount)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Payment</span>
+              <span className="font-medium text-foreground">{row.paymentMode}</span>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-muted-foreground">Reference</span>
+              <span className="text-right font-medium text-foreground">{row.paymentRef}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function FinanceAuditPage() {
+  const [activeTab, setActiveTab] = useState("teachers");
   const [teacherRows, setTeacherRows] = useState(TEACHER_ROWS);
   const [studentRows, setStudentRows] = useState(STUDENT_ROWS);
   const [otherRows, setOtherRows] = useState(OTHER_DEFAULT);
@@ -137,24 +296,12 @@ export default function FinanceAuditPage() {
     setTimeout(() => setToastMessage(""), 3000);
   };
 
-  const teacherPaidCount = teacherRows.filter((row) => row.status === "Paid").length;
-  const studentPaidCount = studentRows.filter((row) => row.status === "Paid").length;
-  const totalIncome = otherRows
-    .filter((row) => row.type === "Income")
-    .reduce((sum, row) => sum + row.amount, 0);
-  const totalExpense = otherRows
-    .filter((row) => row.type === "Expense")
-    .reduce((sum, row) => sum + row.amount, 0);
-
-  const auditKpis = useMemo(
-    () => [
-      { label: "Teacher Audits Closed", value: `${teacherPaidCount}/${teacherRows.length}`, delta: "Monthly salary verification", icon: UserCheck, tone: "blue" },
-      { label: "Student Audits Closed", value: `${studentPaidCount}/${studentRows.length}`, delta: "Fee receipts reconciled", icon: ShieldCheck, tone: "green" },
-      { label: "Other Income Logged", value: formatCurrency(totalIncome), delta: "Hostel, admission, transport", icon: ArrowUpCircle, tone: "teal" },
-      { label: "Other Expenses Logged", value: formatCurrency(totalExpense), delta: "Maintenance and custom outflow", icon: ArrowDownCircle, tone: "rose" },
-    ],
-    [teacherPaidCount, teacherRows.length, studentPaidCount, studentRows.length, totalIncome, totalExpense]
-  );
+  const teacherPendingCount = teacherRows.filter((row) => row.status !== "Paid").length;
+  const studentPendingCount = studentRows.filter((row) => row.status !== "Paid").length;
+  const completedCount =
+    teacherRows.filter((row) => row.status === "Paid").length +
+    studentRows.filter((row) => row.status === "Paid").length;
+  const totalQueueCount = teacherPendingCount + studentPendingCount;
 
   const openTeacherAudit = (row) => {
     setTeacherAudit(row);
@@ -182,6 +329,7 @@ export default function FinanceAuditPage() {
           : row
       )
     );
+
     showToast(`Teacher salary audited for ${teacherAudit.name}.`);
     setTeacherAudit(null);
   };
@@ -223,6 +371,7 @@ export default function FinanceAuditPage() {
           : row
       )
     );
+
     showToast(`Student fee audited for ${studentAudit.name}.`);
     setStudentAudit(null);
   };
@@ -237,12 +386,12 @@ export default function FinanceAuditPage() {
     }
 
     if (!amount || amount <= 0) {
-      showToast("Enter a valid amount for the other audit entry.");
+      showToast("Enter a valid amount for the ledger entry.");
       return;
     }
 
     if (otherMode === "online" && !otherTransactionId.trim()) {
-      showToast("Add a transaction ID for online custom entries.");
+      showToast("Add a transaction ID for online ledger entries.");
       return;
     }
 
@@ -268,13 +417,13 @@ export default function FinanceAuditPage() {
     setOtherTransactionId("");
     setOtherDate("2026-05-24");
     setOtherMonth("May 2026");
-    showToast("Other audit entry recorded successfully.");
+    showToast("Ledger entry recorded successfully.");
   };
 
   return (
     <FinanceShell title="Finance Audit">
       {toastMessage ? (
-        <div className="fixed right-6 top-20 z-50 flex items-center gap-3 rounded-xl border border-border bg-foreground px-5 py-3 text-background shadow-2xl animate-in slide-in-from-top-2">
+        <div className="fixed right-4 top-20 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl animate-in slide-in-from-top-2 sm:right-6">
           <Check className="size-5 shrink-0 text-emerald-400" />
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
@@ -282,187 +431,180 @@ export default function FinanceAuditPage() {
 
       <PageHeader
         title="Finance Audit"
-        subtitle="Audit teacher payroll, student fee receipts, and manual finance entries with payment mode verification and transaction proof."
+        subtitle="Keep the audit queue moving: verify pending payroll, reconcile student receipts, and log supporting ledger entries."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {auditKpis.map((card) => (
-          <StatCard
-            key={card.label}
-            label={card.label}
-            value={card.value}
-            delta={card.delta}
-            icon={card.icon}
-            tone={card.tone}
+      <div className="-mx-1 overflow-x-auto pb-1">
+        <div className="flex min-w-max flex-nowrap gap-2 px-1 sm:gap-3">
+          <SummaryMetric
+            label="Pending payroll"
+            value={teacherPendingCount}
+            hint={`${teacherRows.length} teacher records in this cycle`}
+            tone="blue"
           />
-        ))}
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,_#0f172a_0%,_#1d4ed8_48%,_#0f766e_100%)] p-6 text-white shadow-xl">
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-3">
-            <span className="inline-flex w-fit items-center rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-200">
-              Audit Control
-            </span>
-            <h2 className="text-3xl font-black leading-tight sm:text-4xl">
-              Verify every rupee moving through salary, tuition, and operating ledgers.
-            </h2>
-            <p className="max-w-2xl text-sm font-medium text-slate-200/90 sm:text-base">
-              This workflow gives auditors one surface to mark payments, attach transaction IDs,
-              and record cash-based entries across recurring and custom finance streams.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "Teacher Payroll", value: formatCurrency(teacherRows.reduce((sum, row) => sum + row.salary, 0)) },
-              { label: "Student Tuition", value: formatCurrency(studentRows.reduce((sum, row) => sum + row.fee, 0)) },
-              { label: "Other Entries", value: `${otherRows.length} logged` },
-            ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200/80">{item.label}</p>
-                <p className="mt-3 text-2xl font-black text-white">{item.value}</p>
-              </div>
-            ))}
-          </div>
+          <SummaryMetric
+            label="Pending receipts"
+            value={studentPendingCount}
+            hint={`${studentRows.length} student receipts in this cycle`}
+            tone="emerald"
+          />
+          <SummaryMetric
+            label="Audits completed"
+            value={completedCount}
+            hint={totalQueueCount > 0 ? `${totalQueueCount} items still need review` : "Queue is clear"}
+            tone="amber"
+          />
         </div>
       </div>
 
-      <Tabs defaultValue="teachers" className="space-y-5">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="teachers">Teacher Audit</TabsTrigger>
-          <TabsTrigger value="students">Student Audit</TabsTrigger>
-          <TabsTrigger value="other">Other Entries</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="relative grid h-auto w-full grid-cols-3 gap-1 overflow-hidden rounded-2xl border bg-muted/70 p-1.5 shadow-sm sm:gap-2">
+          <div
+            aria-hidden="true"
+            className={`absolute bottom-1.5 top-1.5 z-0 w-[calc((100%-0.75rem)/3)] rounded-xl border border-primary/20 bg-primary/10 shadow-sm ring-1 ring-primary/10 transition-transform duration-300 ease-out dark:border-primary/25 dark:bg-primary/20 dark:ring-primary/15 ${
+              activeTab === "teachers"
+                ? "translate-x-0"
+                : activeTab === "students"
+                  ? "translate-x-[calc(100%+0.25rem)] sm:translate-x-[calc(100%+0.5rem)]"
+                  : "translate-x-[calc(200%+0.5rem)] sm:translate-x-[calc(200%+1rem)]"
+            }`}
+          />
+          <TabsTrigger
+            value="teachers"
+            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+          >
+            Teacher Audit
+          </TabsTrigger>
+          <TabsTrigger
+            value="students"
+            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+          >
+            Student Audit
+          </TabsTrigger>
+          <TabsTrigger
+            value="other"
+            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+          >
+            Ledger
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="teachers" className="space-y-5">
+        <TabsContent value="teachers">
           <Card className="overflow-hidden">
-            <CardHeader className="border-b">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
-                  <UserCheck className="size-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">Teacher salary audit</CardTitle>
-                  <CardDescription>
-                    Select the payroll month, mark staff as paid, and record online references or cash settlement.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {["Name", "Faculty ID", "Faculty", "Salary", "Month", "Status", "Audit"].map((heading) => (
-                      <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                        {heading}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teacherRows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/40">
-                      <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
-                      <TableCell>
-                        <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{row.faculty}</TableCell>
-                      <TableCell className="font-black text-foreground">{formatCurrency(row.salary)}</TableCell>
-                      <TableCell className="text-muted-foreground">{row.month}</TableCell>
-                      <TableCell><StatusBadge status={row.status} /></TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          className="gap-2"
-                          variant={row.status === "Paid" ? "outline" : "default"}
-                          onClick={() => openTeacherAudit(row)}
-                        >
-                          <ClipboardCheck className="size-4" />
-                          {row.status === "Paid" ? "Review" : "Mark Paid"}
-                        </Button>
-                      </TableCell>
+            <QueueHeader
+              icon={UserCheck}
+              title="Teacher salary audit"
+              description="Mark payroll items as verified, record the payment mode, and store the payment reference."
+              countLabel={`${teacherPendingCount} pending / ${teacherRows.length} total`}
+            />
+            <CardContent className="p-4 sm:p-6">
+              <TeacherAuditCards rows={teacherRows} onAudit={openTeacherAudit} />
+
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {["Teacher", "Faculty ID", "Faculty", "Salary", "Month", "Status", "Action"].map((heading) => (
+                        <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
+                          {heading}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {teacherRows.map((row) => (
+                      <TableRow key={row.id} className="hover:bg-muted/40">
+                        <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
+                        <TableCell>
+                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{row.faculty}</TableCell>
+                        <TableCell className="font-semibold text-foreground">{formatCurrency(row.salary)}</TableCell>
+                        <TableCell className="text-muted-foreground">{row.month}</TableCell>
+                        <TableCell><StatusBadge status={row.status} /></TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            className="gap-2"
+                            variant={row.status === "Paid" ? "outline" : "default"}
+                            onClick={() => openTeacherAudit(row)}
+                          >
+                            <ClipboardCheck className="size-4" />
+                            {row.status === "Paid" ? "Review" : "Audit"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="students" className="space-y-5">
+        <TabsContent value="students">
           <Card className="overflow-hidden">
-            <CardHeader className="border-b">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
-                  <ShieldCheck className="size-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">Student fee audit</CardTitle>
-                  <CardDescription>
-                    Reconcile monthly tuition, select one or more months, and verify the payment mode for every student.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {["Name", "Student ID", "Grade", "Tuition / Month", "Months", "Status", "Audit"].map((heading) => (
-                      <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                        {heading}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studentRows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/40">
-                      <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
-                      <TableCell>
-                        <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{row.grade}</TableCell>
-                      <TableCell className="font-black text-foreground">{formatCurrency(row.fee)}</TableCell>
-                      <TableCell className="text-muted-foreground">{row.months.join(", ")}</TableCell>
-                      <TableCell><StatusBadge status={row.status} /></TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          className="gap-2"
-                          variant={row.status === "Paid" ? "outline" : "default"}
-                          onClick={() => openStudentAudit(row)}
-                        >
-                          <CreditCard className="size-4" />
-                          {row.status === "Paid" ? "Review" : "Mark Paid"}
-                        </Button>
-                      </TableCell>
+            <QueueHeader
+              icon={ShieldCheck}
+              title="Student fee audit"
+              description="Reconcile monthly fee receipts, confirm covered months, and attach the payment proof."
+              countLabel={`${studentPendingCount} pending / ${studentRows.length} total`}
+            />
+            <CardContent className="p-4 sm:p-6">
+              <StudentAuditCards rows={studentRows} onAudit={openStudentAudit} />
+
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {["Student", "Student ID", "Grade", "Fee / Month", "Months", "Status", "Action"].map((heading) => (
+                        <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
+                          {heading}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {studentRows.map((row) => (
+                      <TableRow key={row.id} className="hover:bg-muted/40">
+                        <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
+                        <TableCell>
+                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{row.grade}</TableCell>
+                        <TableCell className="font-semibold text-foreground">{formatCurrency(row.fee)}</TableCell>
+                        <TableCell className="text-muted-foreground">{row.months.join(", ")}</TableCell>
+                        <TableCell><StatusBadge status={row.status} /></TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            className="gap-2"
+                            variant={row.status === "Paid" ? "outline" : "default"}
+                            onClick={() => openStudentAudit(row)}
+                          >
+                            <CreditCard className="size-4" />
+                            {row.status === "Paid" ? "Review" : "Audit"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="other" className="space-y-5">
-          <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+        <TabsContent value="other">
+          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
             <Card>
-              <CardHeader className="border-b">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400">
-                    <Landmark className="size-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Other income / expense entry</CardTitle>
-                    <CardDescription>
-                      Record hostel, transportation, maintenance, admission, or custom audit entries.
-                    </CardDescription>
-                  </div>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-base">Ledger entry</CardTitle>
+                <CardDescription>
+                  Add audit-supporting income or expense records without distracting from the main queue.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-5">
+              <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Category</Label>
                   <Select value={otherCategory} onValueChange={setOtherCategory}>
@@ -543,7 +685,7 @@ export default function FinanceAuditPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                    Offline entries are automatically tagged as paid via cash.
+                    Offline entries are tagged automatically as paid via cash.
                   </div>
                 )}
 
@@ -554,55 +696,52 @@ export default function FinanceAuditPage() {
 
                 <Button className="w-full gap-2" onClick={submitOtherEntry}>
                   <CircleDollarSign className="size-4" />
-                  Record audit entry
+                  Record entry
                 </Button>
               </CardContent>
             </Card>
 
             <Card className="overflow-hidden">
-              <CardHeader className="border-b">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                    <ReceiptText className="size-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Manual audit ledger</CardTitle>
-                    <CardDescription>
-                      Logged entries across hostel, transport, maintenance, admission, and custom ledgers.
-                    </CardDescription>
-                  </div>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-base">Recent ledger entries</CardTitle>
+                <CardDescription>
+                  Supporting entries stay visible here for quick audit reference.
+                </CardDescription>
               </CardHeader>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {["Category", "Type", "Amount", "Payment", "Reference", "Date", "Month"].map((heading) => (
-                        <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                          {heading}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {otherRows.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-muted/40">
-                        <TableCell className="font-semibold text-foreground">{row.category}</TableCell>
-                        <TableCell>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${row.type === "Income" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"}`}>
-                            {row.type}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-black text-foreground">{formatCurrency(row.amount)}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.paymentMode}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.paymentRef}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.date}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.month}</TableCell>
+              <CardContent className="p-4 sm:p-6">
+                <LedgerCards rows={otherRows} />
+
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {["Category", "Type", "Amount", "Payment", "Reference", "Date", "Month"].map((heading) => (
+                          <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
+                            {heading}
+                          </TableHead>
+                        ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {otherRows.map((row) => (
+                        <TableRow key={row.id} className="hover:bg-muted/40">
+                          <TableCell className="font-semibold text-foreground">{row.category}</TableCell>
+                          <TableCell>
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${row.type === "Income" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"}`}>
+                              {row.type}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground">{formatCurrency(row.amount)}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.paymentMode}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.paymentRef}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.date}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.month}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           </div>
         </TabsContent>
@@ -613,7 +752,7 @@ export default function FinanceAuditPage() {
           <DialogHeader>
             <DialogTitle>Audit teacher payment</DialogTitle>
             <DialogDescription>
-              Mark the selected teacher salary as paid and attach the correct audit trail.
+              Mark the selected salary as verified and attach the correct audit trail.
             </DialogDescription>
           </DialogHeader>
           {teacherAudit ? (
@@ -625,7 +764,7 @@ export default function FinanceAuditPage() {
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Salary</p>
-                  <p className="mt-1 font-black text-foreground">{formatCurrency(teacherAudit.salary)}</p>
+                  <p className="mt-1 font-bold text-foreground">{formatCurrency(teacherAudit.salary)}</p>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -641,7 +780,7 @@ export default function FinanceAuditPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Mode of payment</Label>
+                  <Label>Payment mode</Label>
                   <Select value={teacherPaymentMode} onValueChange={setTeacherPaymentMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -662,7 +801,7 @@ export default function FinanceAuditPage() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                  Offline teacher payments will be automatically recorded as paid via cash.
+                  Offline teacher payments will be recorded as paid via cash.
                 </div>
               )}
             </div>
@@ -682,7 +821,7 @@ export default function FinanceAuditPage() {
           <DialogHeader>
             <DialogTitle>Audit student payment</DialogTitle>
             <DialogDescription>
-              Select one or more months, confirm the payment mode, and record proof for the student receipt.
+              Confirm covered months, verify the payment mode, and store proof for the receipt.
             </DialogDescription>
           </DialogHeader>
           {studentAudit ? (
@@ -697,8 +836,8 @@ export default function FinanceAuditPage() {
                   <p className="mt-1 font-semibold text-foreground">{studentAudit.id}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tuition / Month</p>
-                  <p className="mt-1 font-black text-foreground">{formatCurrency(studentAudit.fee)}</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Fee / Month</p>
+                  <p className="mt-1 font-bold text-foreground">{formatCurrency(studentAudit.fee)}</p>
                 </div>
               </div>
 
@@ -720,7 +859,7 @@ export default function FinanceAuditPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Total selected value</Label>
-                  <div className="rounded-xl border bg-muted/40 px-4 py-2.5 text-sm font-black text-foreground">
+                  <div className="rounded-xl border bg-muted/40 px-4 py-2.5 text-sm font-bold text-foreground">
                     {formatCurrency(studentAudit.fee * studentMonths.length)}
                   </div>
                 </div>
@@ -737,7 +876,7 @@ export default function FinanceAuditPage() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                  Offline student payments will be automatically recorded as paid via cash.
+                  Offline student payments will be recorded as paid via cash.
                 </div>
               )}
             </div>
