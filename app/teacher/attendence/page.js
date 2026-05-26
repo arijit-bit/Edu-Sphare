@@ -495,7 +495,15 @@ export default function TeacherAttendencePage() {
                   filteredStudents.map((student) => {
                     const isPresent = student.status === "present";
                     return (
-                      <div key={student.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                      <div
+                        key={student.id}
+                        className={cn(
+                          "flex items-center justify-between p-4 transition-colors",
+                          isPresent
+                            ? "bg-emerald-50/70 hover:bg-emerald-50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30"
+                            : "bg-red-50/70 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/30"
+                        )}
+                      >
                         <div className="flex items-center gap-4">
                           <div className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground border border-border shrink-0">
                             {student.rollNo}
@@ -511,10 +519,10 @@ export default function TeacherAttendencePage() {
                         <button
                           onClick={() => updateStatus(student.id, isPresent ? "absent" : "present")}
                           className={cn(
-                            "flex size-12 items-center justify-center rounded-xl border-2 text-sm font-bold transition-all active:scale-95 shrink-0",
+                            "flex h-9 w-9 items-center justify-center rounded-md text-xs font-bold transition-all active:scale-95 shrink-0",
                             isPresent
-                              ? "bg-emerald-100 border-emerald-500 text-emerald-600 dark:bg-emerald-900/40 dark:border-emerald-500"
-                              : "bg-red-50 border-red-200 text-red-400 dark:bg-red-900/20 dark:border-red-800/50"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                              : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
                           )}
                         >
                           {isPresent ? "P" : "A"}
