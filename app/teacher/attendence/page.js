@@ -38,23 +38,26 @@ import {
   Search,
   Settings,
   CheckCircle2,
-  Clock3,
-  XCircle,
   Filter,
   Save,
   SendHorizontal,
   LayoutGrid,
-  List
+  List,
+  Clock3,
+  X,
+  XCircle,
 } from "lucide-react";
 import { useTeacherLayout } from "../layout";
 
 const studentsSeed = [
-  { id: "ADM-001", rollNo: "01", name: "Alice Anderson", status: "present", remarks: "" },
-  { id: "ADM-002", rollNo: "02", name: "Benjamin Baker", status: "absent", remarks: "Medical leave" },
-  { id: "ADM-003", rollNo: "03", name: "Chloe Carter", status: "leave", remarks: "Bus delayed" },
-  { id: "ADM-004", rollNo: "04", name: "Daniel Cooper", status: "present", remarks: "" },
-  { id: "ADM-005", rollNo: "05", name: "Ella Davis", status: "present", remarks: "" },
-  { id: "ADM-006", rollNo: "06", name: "Felix Evans", status: "absent", remarks: "Family function" },
+  { id: "ADM-001", rollNo: "01", name: "Alice Anderson",   status: "present", grade: "Grade 10", section: "A", subgroup: "10A" },
+  { id: "ADM-002", rollNo: "02", name: "Benjamin Baker",  status: "absent",  grade: "Grade 10", section: "A", subgroup: "10A" },
+  { id: "ADM-003", rollNo: "03", name: "Chloe Carter",    status: "leave",   grade: "Grade 10", section: "B", subgroup: "10B" },
+  { id: "ADM-004", rollNo: "04", name: "Daniel Cooper",   status: "present", grade: "Grade 10", section: "A", subgroup: "10A" },
+  { id: "ADM-005", rollNo: "05", name: "Ella Davis",      status: "present", grade: "Grade 11", section: "A", subgroup: "11A" },
+  { id: "ADM-006", rollNo: "06", name: "Felix Evans",     status: "absent",  grade: "Grade 11", section: "A", subgroup: "11A" },
+  { id: "ADM-007", rollNo: "07", name: "Grace Foster",    status: "present", grade: "Grade 11", section: "B", subgroup: "11B" },
+  { id: "ADM-008", rollNo: "08", name: "Henry Green",     status: "leave",   grade: "Grade 12", section: "A", subgroup: "12A" },
 ];
 
 const statusOptions = [
@@ -109,20 +112,22 @@ export default function TeacherAttendencePage() {
 
   const filteredStudents = useMemo(() => {
     const search = searchValue.trim().toLowerCase();
-    if (!search) return students;
-    return students.filter((student) =>
-      [student.name, student.rollNo, student.id].some((value) =>
-        value.toLowerCase().includes(search)
-      )
-    );
+    return students.filter((student) => {
+      const matchesSearch =
+        !search ||
+        [student.name, student.rollNo, student.id, student.subgroup].some((v) =>
+          v.toLowerCase().includes(search)
+        );
+      return matchesSearch;
+    });
   }, [searchValue, students]);
 
   const summary = useMemo(() => {
-    const present = students.filter((student) => student.status === "present").length;
-    const absent = students.filter((student) => student.status === "absent").length;
-    const leave = students.filter((student) => student.status === "leave").length;
-    const marked = students.length;
-    return { total: students.length, marked, present, absent, leave };
+    const present = students.filter((s) => s.status === "present").length;
+    const absent  = students.filter((s) => s.status === "absent").length;
+    const leave   = students.filter((s) => s.status === "leave").length;
+    const total   = students.length;
+    return { total, present, absent, leave };
   }, [students]);
 
   const updateStatus = (id, status) => {
@@ -231,19 +236,31 @@ export default function TeacherAttendencePage() {
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
               placeholder="Search students, classes, or ID..."
-              className="h-10 rounded-xl bg-slate-100/50 dark:bg-slate-900/50 pl-10 pr-10 text-sm shadow-none focus-visible:ring-primary/20 transition-all border-border"
+              className="h-10 rounded-xl bg-slate-100/50 dark:bg-slate-900/50 pl-10 pr-18 text-sm shadow-none focus-visible:ring-primary/20 transition-all border-border"
             />
+            {searchValue ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSearchValue("")}
+                className="absolute right-8 top-1/2 size-6 -translate-y-1/2 rounded-md text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="size-3.5" />
+              </Button>
+            ) : null}
             <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
               /
             </span>
-          </div>
+            </div>
 
-          <div className="ml-auto flex items-center gap-1 md:gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
-              <Bell className="size-4.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
-              <CircleHelp className="size-4.5" />
+            <div className="ml-auto hidden items-center gap-1 md:flex md:gap-2">
+              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
+                <Bell className="size-4.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
+                <CircleHelp className="size-4.5" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
               <Settings className="size-4.5" />
@@ -253,6 +270,7 @@ export default function TeacherAttendencePage() {
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-[1280px] px-4 py-6 pb-32 md:px-5">
+        {/* Page Title + Actions */}
         <section className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Record Attendance</h1>
@@ -268,14 +286,14 @@ export default function TeacherAttendencePage() {
                 <List className="size-4" />
               </Button>
             </div>
-            <Button variant="outline" className="hidden sm:flex h-10 rounded-xl bg-background/50 backdrop-blur-sm">
+            <Button variant="outline" className="h-10 rounded-xl bg-background/50">
               <Download className="mr-2 size-4" />
               Export
             </Button>
             <Button
               variant="outline"
               onClick={resetAttendance}
-              className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 bg-background/50 backdrop-blur-sm"
+              className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 bg-background/50"
             >
               <RotateCcw className="mr-2 size-4" />
               Reset
@@ -283,7 +301,7 @@ export default function TeacherAttendencePage() {
           </div>
         </section>
 
-        {/* Filter Section with Glassmorphism */}
+        {/* Filter Section */}
         <section className="rounded-2xl border border-border bg-white/60 dark:bg-slate-900/60 p-4 shadow-sm backdrop-blur-xl mb-6">
           <div className="hidden md:block">
             {filtersForm}
@@ -316,179 +334,206 @@ export default function TeacherAttendencePage() {
           </div>
         </section>
 
+        {/* Student List Section */}
         <section className="mt-4 mb-32 lg:mb-0 rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="flex flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 md:flex-row md:items-center md:justify-between">
+          {/* Section Header: Quick Actions + Legend + Cohort Filters */}
+          <div className="border-b border-border bg-muted/40 px-4 py-3 space-y-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-foreground">Quick Actions:</span>
-              <Button
-                variant="secondary"
-                onClick={markAllPresent}
-                className="h-9 rounded-xl border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 shadow-sm"
-              >
-                <CheckCircle2 className="mr-2 size-4" />
-                Mark All Present
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              {statusOptions.map((option) => {
-                const count = students.filter((student) => student.status === option.value).length;
-                return (
-                  <div key={option.value} className={cn("flex items-center gap-2", option.legendClass)}>
-                    <span className={cn("size-2 rounded-full", option.dotClass)} />
-                    <span>
-                      {option.label} ({count})
-                    </span>
-                  </div>
-                );
-              })}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-foreground">Quick Actions:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={markAllPresent}
+                  className="h-8 rounded-md px-3 border-border bg-background text-foreground hover:bg-muted shadow-none"
+                >
+                  <CheckCircle2 className="mr-1.5 size-3.5" />
+                  Mark All Present
+                </Button>
+              </div>
             </div>
           </div>
 
           <div className="overflow-hidden mb-8">
-            {/* Desktop Table Rendering */}
+            {/* Desktop Table */}
             <div className="hidden xl:block">
               <Table>
                 <TableHeader className="bg-muted/20">
                   <TableRow className="hover:bg-transparent border-border">
-                    <TableHead className="h-12 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Roll No.</TableHead>
-                    <TableHead className="h-12 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Student Name</TableHead>
+                    <TableHead className="h-12 px-4 pl-6 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Student Information</TableHead>
+                    <TableHead className="h-12 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Cohort</TableHead>
                     <TableHead className="h-12 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Admission ID</TableHead>
                     <TableHead className="h-12 px-4 text-[11px] font-bold uppercase tracking-wide text-muted-foreground text-center">Attendance Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
-                    <TableRow key={student.id} className="border-border bg-card transition-colors hover:bg-muted/40">
-                      <TableCell className="px-4 py-4 text-sm font-semibold text-foreground">{student.rollNo}</TableCell>
-                      <TableCell className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-8 border border-border/50">
-                            <AvatarFallback className="bg-primary/10 text-[11px] font-bold text-primary">
-                              {getInitials(student.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-semibold text-foreground">{student.name}</span>
+                  {filteredStudents.length > 0 ? (
+                    filteredStudents.map((student) => (
+                      <TableRow key={student.id} className="border-border bg-card transition-colors hover:bg-muted/40">
+                        {/* Student Info */}
+                        <TableCell className="px-4 pl-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-9 border border-border/50 shrink-0">
+                              <AvatarFallback className="bg-primary/10 text-[11px] font-bold text-primary">
+                                {getInitials(student.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{student.grade} · Section {student.section}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Cohort Badge */}
+                        <TableCell className="px-4 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                            {student.subgroup}
+                          </span>
+                        </TableCell>
+
+                        {/* Admission ID */}
+                        <TableCell className="px-4 py-4 text-sm text-muted-foreground font-mono">
+                          {student.id}
+                        </TableCell>
+
+                        {/* Tri-state Attendance Toggle */}
+                        <TableCell className="px-4 py-4 text-center">
+                          <div className="inline-flex items-center bg-muted/50 p-1 rounded-lg border border-border/50 shadow-inner gap-0.5">
+                            {statusOptions.map((option) => (
+                              <button
+                                key={option.value}
+                                onClick={() => updateStatus(student.id, option.value)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-md text-[11px] font-bold tracking-wide uppercase transition-all",
+                                  student.status === option.value
+                                    ? option.activeClass + " shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                                )}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <Search className="size-10 text-muted-foreground/30" />
+                          <p className="text-sm font-semibold text-muted-foreground">No students matched your search</p>
+                          <p className="text-xs text-muted-foreground/70">Try a different name, ID, or change the group filter.</p>
                         </div>
                       </TableCell>
-                      <TableCell className="px-4 py-4 text-sm text-muted-foreground">{student.id}</TableCell>
-                      <TableCell className="px-4 py-4 text-center">
-                        <ToggleGroup 
-                          value={student.status}
-                          className="justify-center gap-1 bg-muted/30 p-1 rounded-lg inline-flex"
-                        >
-                          {statusOptions.map((option) => (
-                            <ToggleGroupItem 
-                              key={option.value} 
-                              value={option.value} 
-                              aria-label={option.label}
-                              onClick={() => updateStatus(student.id, option.value)}
-                              className={cn(
-                                "h-8 min-w-10 rounded-md border border-transparent text-xs font-semibold transition-all",
-                                student.status === option.value 
-                                  ? option.activeClass 
-                                  : "text-muted-foreground hover:bg-background bg-transparent"
-                              )}
-                            >
-                              <option.icon className="mr-1 size-3.5" />
-                              {option.short}
-                            </ToggleGroupItem>
-                          ))}
-                        </ToggleGroup>
-                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
 
-            {/* Mobile Card Rendering (Grid View) */}
+            {/* Mobile Card View (Grid) */}
             {viewMode === "grid" && (
               <div className="space-y-4 p-4 xl:hidden bg-muted/10">
-              {filteredStudents.map((student) => (
-                <Card key={student.id} className="overflow-hidden border-border shadow-sm transition-all hover:shadow-md dark:bg-slate-900/80">
-                  <CardContent className="p-4 flex flex-col gap-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="size-12 border border-border/50 shadow-sm">
-                        <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
-                          {getInitials(student.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-base text-foreground truncate">{student.name}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                          <span className="font-medium bg-muted px-1.5 py-0.5 rounded text-[10px]">Roll {student.rollNo}</span> 
-                          <span>{student.id}</span>
-                        </p>
-                      </div>
-                    </div>
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map((student) => (
+                    <Card key={student.id} className="overflow-hidden border-border shadow-sm transition-all hover:shadow-md dark:bg-slate-900/80">
+                      <CardContent className="p-4 flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="size-12 border border-border/50 shadow-sm">
+                            <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
+                              {getInitials(student.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-base text-foreground truncate">{student.name}</p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="font-medium bg-muted px-1.5 py-0.5 rounded text-[10px]">Roll {student.rollNo}</span>
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">{student.subgroup}</span>
+                              <span className="text-xs text-muted-foreground">{student.id}</span>
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="flex flex-col gap-3 bg-muted/20 p-3 rounded-xl border border-border/50">
-                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</label>
-                      <ToggleGroup 
-                        value={student.status}
-                        className="justify-start gap-2 w-full"
-                      >
-                        {statusOptions.map((option) => (
-                          <ToggleGroupItem 
-                            key={option.value} 
-                            value={option.value} 
-                            aria-label={option.label}
-                            onClick={() => updateStatus(student.id, option.value)}
-                            className={cn(
-                              "flex-1 h-10 rounded-lg border text-sm font-semibold transition-all",
-                              student.status === option.value 
-                                ? option.activeClass 
-                                : "text-muted-foreground border-border bg-background hover:bg-muted"
-                            )}
-                          >
-                            <option.icon className="mr-1.5 size-4" />
-                            {option.short}
-                          </ToggleGroupItem>
-                        ))}
-                      </ToggleGroup>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        <div className="flex flex-col gap-3 bg-muted/20 p-3 rounded-xl border border-border/50">
+                          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</label>
+                          <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border/50 shadow-inner gap-0.5">
+                            {statusOptions.map((option) => (
+                              <button
+                                key={option.value}
+                                onClick={() => updateStatus(student.id, option.value)}
+                                className={cn(
+                                  "flex-1 py-2 rounded-md text-xs font-bold tracking-wide uppercase transition-all",
+                                  student.status === option.value
+                                    ? option.activeClass + " shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+                                )}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="py-16 flex flex-col items-center gap-2">
+                    <Search className="size-10 text-muted-foreground/30" />
+                    <p className="text-sm font-semibold text-muted-foreground">No students matched your search</p>
+                    <p className="text-xs text-muted-foreground/70">Try a different name, ID, or change the group filter.</p>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Mobile Compact List View */}
             {viewMode === "list" && (
               <div className="flex flex-col xl:hidden divide-y divide-border bg-background">
-                {filteredStudents.map((student) => {
-                  const isPresent = student.status === "present";
-                  return (
-                    <div key={student.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground border border-border">
-                          {student.rollNo}
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map((student) => {
+                    const isPresent = student.status === "present";
+                    return (
+                      <div key={student.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground border border-border shrink-0">
+                            {student.rollNo}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">{student.name}</p>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold border border-primary/20 mt-0.5">
+                              {student.subgroup}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-sm text-foreground">{student.name}</p>
-                        </div>
+
+                        <button
+                          onClick={() => updateStatus(student.id, isPresent ? "absent" : "present")}
+                          className={cn(
+                            "flex size-12 items-center justify-center rounded-xl border-2 text-sm font-bold transition-all active:scale-95 shrink-0",
+                            isPresent
+                              ? "bg-emerald-100 border-emerald-500 text-emerald-600 dark:bg-emerald-900/40 dark:border-emerald-500"
+                              : "bg-red-50 border-red-200 text-red-400 dark:bg-red-900/20 dark:border-red-800/50"
+                          )}
+                        >
+                          {isPresent ? "P" : "A"}
+                        </button>
                       </div>
-                      
-                      <button
-                        onClick={() => updateStatus(student.id, isPresent ? "absent" : "present")}
-                        className={cn(
-                          "flex size-12 items-center justify-center rounded-xl border-2 transition-all active:scale-95",
-                          isPresent 
-                            ? "bg-emerald-100 border-emerald-500 text-emerald-600 dark:bg-emerald-900/40 dark:border-emerald-500" 
-                            : "bg-red-50 border-red-200 text-red-400 dark:bg-red-900/20 dark:border-red-800/50"
-                        )}
-                      >
-                        <CheckCircle2 className={cn("size-6", isPresent ? "opacity-100" : "opacity-50")} />
-                      </button>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="py-16 flex flex-col items-center gap-2">
+                    <Search className="size-10 text-muted-foreground/30" />
+                    <p className="text-sm font-semibold text-muted-foreground">No students matched your search</p>
+                    <p className="text-xs text-muted-foreground/70">Try a different name, ID, or change the group filter.</p>
+                  </div>
+                )}
               </div>
             )}
-            
-            {/* Action Bar at the bottom of the list */}
-            <div className="border-t border-border bg-background/50 dark:bg-slate-900/50 px-4 py-4 md:px-6 ">
+
+            {/* Action Bar */}
+            <div className="border-t border-border bg-background/50 dark:bg-slate-900/50 px-4 py-4 md:px-6">
               <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 text-sm text-muted-foreground">
                   <span className="bg-muted px-2 py-1 rounded-md">
@@ -503,7 +548,7 @@ export default function TeacherAttendencePage() {
                 </div>
 
                 <div className="flex justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-                  <Button variant="outline" className="h-10 rounded-xl bg-background/50 backdrop-blur-sm shadow-sm">
+                  <Button variant="outline" className="h-10 rounded-xl shadow-sm">
                     Save
                     <Save className="ml-1 size-4" />
                   </Button>
@@ -514,7 +559,6 @@ export default function TeacherAttendencePage() {
                 </div>
               </div>
             </div>
-
           </div>
         </section>
       </main>
