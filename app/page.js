@@ -82,7 +82,7 @@ export default function HomePage() {
               <Link href="/auth/login">Sign In</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link href="/auth/register">Get Started</Link>
+              <Link href="/apply">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button size="lg" asChild>
-                <Link href="/auth/register">
+                <Link href="/apply">
                   Get Started Free <ArrowRight className="ml-2 size-4" />
                 </Link>
               </Button>
