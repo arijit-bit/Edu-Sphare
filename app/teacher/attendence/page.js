@@ -105,66 +105,27 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-export default function TeacherAttendencePage() {
-  const { setMobileOpen } = useTeacherLayout();
-  const [viewMode, setViewMode] = useState("grid");
-  const [classValue, setClassValue] = useState("Grade 10");
-  const [sectionValue, setSectionValue] = useState("A - Science");
-  const [subjectValue, setSubjectValue] = useState("Physics");
-  const [periodValue, setPeriodValue] = useState("Period 1 (08:00 AM)");
+/**
+ * FiltersForm is extracted as its own component so each rendered instance
+ * (desktop + mobile accordion) has its own independent datePickerOpen state,
+ * preventing two calendars from opening simultaneously.
+ */
+function FiltersForm({
+  classValue, setClassValue,
+  sectionValue, setSectionValue,
+  subjectValue, setSubjectValue,
+  periodValue, setPeriodValue,
+}) {
   const [dateValue, setDateValue] = useState("2023-10-24");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [students, setStudents] = useState(studentsSeed);
 
   const formattedDateLabel = useMemo(() => {
     const parsed = new Date(`${dateValue}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) {
-      return "Select date";
-    }
-
+    if (Number.isNaN(parsed.getTime())) return "Select date";
     return format(parsed, "PPP");
   }, [dateValue]);
 
-  const filteredStudents = useMemo(() => {
-    const search = searchValue.trim().toLowerCase();
-    return students.filter((student) => {
-      const matchesSearch =
-        !search ||
-        [student.name, student.rollNo, student.id, student.subgroup].some((v) =>
-          v.toLowerCase().includes(search)
-        );
-      return matchesSearch;
-    });
-  }, [searchValue, students]);
-
-  const summary = useMemo(() => {
-    const present = students.filter((s) => s.status === "present").length;
-    const absent  = students.filter((s) => s.status === "absent").length;
-    const leave   = students.filter((s) => s.status === "leave").length;
-    const total   = students.length;
-    return { total, present, absent, leave };
-  }, [students]);
-
-  const updateStatus = (id, status) => {
-    setStudents((current) =>
-      current.map((student) =>
-        student.id === id ? { ...student, status } : student
-      )
-    );
-  };
-
-  const markAllPresent = () => {
-    setStudents((current) =>
-      current.map((student) => ({ ...student, status: "present" }))
-    );
-  };
-
-  const resetAttendance = () => {
-    setStudents(studentsSeed);
-  };
-
-  const filtersForm = (
+  return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Class</label>
@@ -212,18 +173,19 @@ export default function TeacherAttendencePage() {
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Date</label>
         <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <PopoverTrigger
-            render={
+            render={(triggerProps) => (
               <Button
+                {...triggerProps}
                 type="button"
                 variant="outline"
                 data-empty={!dateValue}
                 className="h-11 w-full justify-between rounded-lg bg-background text-left font-normal data-[empty=true]:text-muted-foreground"
-              />
-            }
-          >
-            {dateValue ? <span>{formattedDateLabel}</span> : <span>Pick a date</span>}
-            <ChevronDown className="size-4 text-muted-foreground" />
-          </PopoverTrigger>
+              >
+                {dateValue ? <span>{formattedDateLabel}</span> : <span>Pick a date</span>}
+                <ChevronDown className="size-4 text-muted-foreground" />
+              </Button>
+            )}
+          />
           <PopoverContent className="w-auto p-0" align="start">
             <CalendarPicker
               mode="single"
@@ -234,6 +196,7 @@ export default function TeacherAttendencePage() {
                 setDatePickerOpen(false);
               }}
               defaultMonth={dateValue ? new Date(`${dateValue}T00:00:00`) : undefined}
+              captionLayout="dropdown"
             />
           </PopoverContent>
         </Popover>
@@ -254,6 +217,62 @@ export default function TeacherAttendencePage() {
       </div>
     </div>
   );
+}
+
+export default function TeacherAttendencePage() {
+  const { setMobileOpen } = useTeacherLayout();
+  const [viewMode, setViewMode] = useState("grid");
+  const [classValue, setClassValue] = useState("Grade 10");
+  const [sectionValue, setSectionValue] = useState("A - Science");
+  const [subjectValue, setSubjectValue] = useState("Physics");
+  const [periodValue, setPeriodValue] = useState("Period 1 (08:00 AM)");
+  const [searchValue, setSearchValue] = useState("");
+  const [students, setStudents] = useState(studentsSeed);
+
+  const filteredStudents = useMemo(() => {
+    const search = searchValue.trim().toLowerCase();
+    return students.filter((student) => {
+      const matchesSearch =
+        !search ||
+        [student.name, student.rollNo, student.id, student.subgroup].some((v) =>
+          v.toLowerCase().includes(search)
+        );
+      return matchesSearch;
+    });
+  }, [searchValue, students]);
+
+  const summary = useMemo(() => {
+    const present = students.filter((s) => s.status === "present").length;
+    const absent  = students.filter((s) => s.status === "absent").length;
+    const leave   = students.filter((s) => s.status === "leave").length;
+    const total   = students.length;
+    return { total, present, absent, leave };
+  }, [students]);
+
+  const updateStatus = (id, status) => {
+    setStudents((current) =>
+      current.map((student) =>
+        student.id === id ? { ...student, status } : student
+      )
+    );
+  };
+
+  const markAllPresent = () => {
+    setStudents((current) =>
+      current.map((student) => ({ ...student, status: "present" }))
+    );
+  };
+
+  const resetAttendance = () => {
+    setStudents(studentsSeed);
+  };
+
+  const filtersFormProps = {
+    classValue, setClassValue,
+    sectionValue, setSectionValue,
+    subjectValue, setSubjectValue,
+    periodValue, setPeriodValue,
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -270,7 +289,7 @@ export default function TeacherAttendencePage() {
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
               placeholder="Search students, classes, or ID..."
-              className="h-10 rounded-xl border-border bg-background pl-10 pr-18 text-sm shadow-none transition-all focus-visible:ring-primary/20"
+              className="h-10 rounded-xl border-border bg-background pl-10 pr-9 text-sm shadow-none transition-all focus-visible:ring-primary/20"
             />
             {searchValue ? (
               <Button
@@ -278,7 +297,7 @@ export default function TeacherAttendencePage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setSearchValue("")}
-                className="absolute right-8 top-1/2 size-6 -translate-y-1/2 rounded-md text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-1/2 size-6 -translate-y-1/2 rounded-md text-muted-foreground hover:text-foreground"
                 aria-label="Clear search"
               >
                 <X className="size-3.5" />
@@ -339,7 +358,7 @@ export default function TeacherAttendencePage() {
         {/* Filter Section */}
         <section className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm backdrop-blur-xl">
           <div className="hidden md:block">
-            {filtersForm}
+            <FiltersForm {...filtersFormProps} />
           </div>
 
           <div className="block md:hidden">
@@ -352,7 +371,7 @@ export default function TeacherAttendencePage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-4">
-                  {filtersForm}
+                  <FiltersForm {...filtersFormProps} />
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -372,7 +391,7 @@ export default function TeacherAttendencePage() {
 
         {/* Student List Section */}
         <section className="mt-4 mb-32 lg:mb-0 rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          {/* Section Header: Quick Actions + Legend + Cohort Filters */}
+          {/* Section Header: Quick Actions */}
           <div className="border-b border-border bg-muted/40 px-4 py-3 space-y-3">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-3">

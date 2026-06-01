@@ -21,16 +21,18 @@ function Calendar({
         className
       )}
       classNames={{
-        root: "rdp-root",
+        root: "rdp-root relative",
         months: "flex flex-col",
         month: "space-y-4",
-        month_caption: "relative flex items-center justify-center px-9 pt-1",
-        caption_label: "text-sm font-semibold text-foreground",
-        nav: "flex items-center gap-1",
+        month_caption: "relative flex items-center justify-center px-9 pt-1 min-h-8",
+        caption_label: "hidden",
+        dropdowns: "flex items-center gap-1",
+        dropdown: "text-sm font-semibold bg-transparent border-0 cursor-pointer focus:outline-none text-foreground",
+        nav: "absolute top-[10px] left-0 right-0 flex justify-between px-3 z-10",
         button_previous:
-          "absolute left-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-muted",
+          "inline-flex size-7 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-muted",
         button_next:
-          "absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-muted",
+          "inline-flex size-7 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-muted",
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex",
         weekday:
