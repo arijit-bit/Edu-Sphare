@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "@/components/language-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -47,24 +47,26 @@ import {
 import { cn } from "@/lib/utils";
 
 /* ── Nav Config ── */
-function getStudentNavItems(t) {
+function getStudentNavItems(t, schoolSlug) {
+  const base = `/${schoolSlug}/student`;
   return [
-    { label: t("Dashboard"), href: "/student/dashboard", icon: LayoutDashboard },
-    { label: t("Performance"), href: "/student/performance", icon: TrendingUp },
-    { label: t("Timetable"), href: "/student/timetable", icon: Calendar },
-    { label: t("Results"), href: "/student/results", icon: FileText },
-    { label: t("Feedback"), href: "/student/feedback", icon: MessageSquare },
-    { label: t("Settings"), href: "/student/settings", icon: Settings },
+    { label: t("Dashboard"), href: `${base}/dashboard`, icon: LayoutDashboard },
+    { label: t("Performance"), href: `${base}/performance`, icon: TrendingUp },
+    { label: t("Timetable"), href: `${base}/timetable`, icon: Calendar },
+    { label: t("Results"), href: `${base}/results`, icon: FileText },
+    { label: t("Feedback"), href: `${base}/feedback`, icon: MessageSquare },
+    { label: t("Settings"), href: `${base}/settings`, icon: Settings },
   ];
 }
 
-function getMobileNavItems(t) {
+function getMobileNavItems(t, schoolSlug) {
+  const base = `/${schoolSlug}/student`;
   return [
-    { label: t("Dashboard"), href: "/student/dashboard", icon: LayoutDashboard },
-    { label: t("Performance"), href: "/student/performance", icon: TrendingUp },
-    { label: t("Timetable"), href: "/student/timetable", icon: Calendar },
-    { label: t("Results"), href: "/student/results", icon: FileText },
-    { label: t("Feedback"), href: "/student/feedback", icon: MessageSquare },
+    { label: t("Dashboard"), href: `${base}/dashboard`, icon: LayoutDashboard },
+    { label: t("Performance"), href: `${base}/performance`, icon: TrendingUp },
+    { label: t("Timetable"), href: `${base}/timetable`, icon: Calendar },
+    { label: t("Results"), href: `${base}/results`, icon: FileText },
+    { label: t("Feedback"), href: `${base}/feedback`, icon: MessageSquare },
   ];
 }
 
@@ -142,7 +144,8 @@ function SidebarNavItem({ item, pathname, onClick }) {
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNavClick }) {
   const { t } = useLanguage();
-  const studentNavItems = getStudentNavItems(t);
+  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const studentNavItems = getStudentNavItems(t, schoolSlug);
 
   return (
     <div className="flex h-full flex-col">
@@ -196,7 +199,7 @@ function SidebarContent({ pathname, onNavClick }) {
             <p className="text-sm font-semibold text-foreground truncate">Aarav Malhotra</p>
             <p className="text-xs text-muted-foreground truncate">Grade 12-A</p>
           </div>
-          <Link href="/student/settings">
+          <Link href={`/${useParams()?.schoolSlug ?? "dummy-school"}/student/settings`}>
             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
               <Settings className="h-3.5 w-3.5" />
             </Button>
@@ -211,7 +214,8 @@ function SidebarContent({ pathname, onNavClick }) {
 export function useStudentNav() {
   const pathname = usePathname() || "";
   const { t } = useLanguage();
-  const studentNavItems = getStudentNavItems(t);
+  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const studentNavItems = getStudentNavItems(t, schoolSlug);
   const activeItem = studentNavItems.find(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
@@ -223,7 +227,8 @@ export function StudentShell({ children, title, subtitle }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, dateLocale } = useLanguage();
-  const mobileNavItems = getMobileNavItems(t);
+  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const mobileNavItems = getMobileNavItems(t, schoolSlug);
   const translatedTitle = title ? t(title) : title;
   const translatedSubtitle = subtitle ? t(subtitle) : subtitle;
 
@@ -344,7 +349,7 @@ export function StudentShell({ children, title, subtitle }) {
               {/* Avatar */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link href="/student/settings">
+                  <Link href={`/${schoolSlug}/student/settings`}>
                     <Avatar className="h-[30px] w-[30px] cursor-pointer sm:h-8 sm:w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                         AM
