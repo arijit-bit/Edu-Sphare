@@ -22,6 +22,26 @@ const nextConfig = {
         destination: '/dummy-school/admin/:path*',
         permanent: false,
       },
+      {
+        source: '/:schoolSlug/student',
+        destination: '/:schoolSlug/student/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/:schoolSlug/teacher',
+        destination: '/:schoolSlug/teacher/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/:schoolSlug/finance',
+        destination: '/:schoolSlug/finance/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/:schoolSlug/admin',
+        destination: '/:schoolSlug/admin/dashboard',
+        permanent: false,
+      },
     ]
   },
 };

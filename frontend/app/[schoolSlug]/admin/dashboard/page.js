@@ -22,8 +22,8 @@ import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { label: "Dashboard",    href: "/admin/dashboard",  icon: LayoutDashboard },
+const getNavItems = (schoolSlug) => [
+  { label: "Dashboard",    href: `/${schoolSlug}/admin/dashboard`,  icon: LayoutDashboard },
   { label: "Students",     href: "#",                 icon: GraduationCap   },
   { label: "Teachers",     href: "#",                 icon: Users           },
   { label: "Finance",      href: `/${schoolSlug}/finance/dashboard`,icon: CreditCard      },
