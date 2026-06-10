@@ -57,6 +57,8 @@ function NavItem({ item, isActive, onClick }) {
 
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNav }) {
+  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const navItems = getNavItems(schoolSlug);
   return (
     <div className="flex h-full flex-col">
       {/* Brand */}

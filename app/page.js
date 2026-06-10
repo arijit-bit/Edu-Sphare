@@ -16,7 +16,7 @@ const roles = [
     id: "student",
     title: "Student",
     description: "Access your dashboard, view results, check timetable, and track academic performance.",
-    href: "/student/dashboard",
+    href: "/dummy-school/student/dashboard",
     icon: GraduationCap,
     gradient: "from-blue-600 to-indigo-700",
     lightBg: "bg-blue-50 dark:bg-blue-950/30",
@@ -27,7 +27,7 @@ const roles = [
     id: "teacher",
     title: "Teacher",
     description: "Manage classes, mark attendance, submit grades, and communicate with students.",
-    href: "/teacher/dashboard",
+    href: "/dummy-school/teacher/dashboard",
     icon: Users,
     gradient: "from-teal-600 to-emerald-700",
     lightBg: "bg-teal-50 dark:bg-teal-950/30",
@@ -38,7 +38,7 @@ const roles = [
     id: "finance",
     title: "Finance",
     description: "Track fee collections, manage payroll, generate reports, and analyze school finances.",
-    href: "/finance/dashboard",
+    href: "/dummy-school/finance/dashboard",
     icon: BarChart3,
     gradient: "from-violet-600 to-purple-700",
     lightBg: "bg-violet-50 dark:bg-violet-950/30",
@@ -49,7 +49,7 @@ const roles = [
     id: "admin",
     title: "Admin",
     description: "Full system control — manage students, staff, finances, and school operations.",
-    href: "/admin/dashboard",
+    href: "/dummy-school/admin/dashboard",
     icon: Shield,
     gradient: "from-rose-600 to-pink-700",
     lightBg: "bg-rose-50 dark:bg-rose-950/30",
@@ -117,7 +117,7 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/auth/login">Sign In to Portal</Link>
+                <Link href="/dummy-school">Go to Demo Portal</Link>
               </Button>
             </div>
           </div>
