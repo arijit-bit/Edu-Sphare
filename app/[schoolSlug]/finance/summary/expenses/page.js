@@ -7,12 +7,12 @@ import {
   PageHeader,
   StatCard,
   StatusBadge,
-} from "@/app/finance/analytics-ui";
+} from "@/components/shells/finance-ui";
 import {
   expenseCards,
   expenseDistribution,
-} from "@/app/finance/summary/summary-data";
-import { SummarySectionNav } from "@/app/finance/summary/section-nav";
+} from "@/app/[schoolSlug]/finance/summary/summary-data";
+import { SummarySectionNav } from "@/app/[schoolSlug]/finance/summary/section-nav";
 import { DistributionDonutChart } from "@/components/finance/distribution-donut-chart";
 import { EarningsComparisonChart } from "@/components/finance/earnings-comparison-chart";
 import { Button } from "@/components/ui/button";

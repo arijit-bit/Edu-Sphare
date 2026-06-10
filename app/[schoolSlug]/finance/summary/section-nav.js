@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { summaryTabs } from "@/app/finance/summary/summary-data";
+import { summaryTabs } from "@/app/[schoolSlug]/finance/summary/summary-data";
 import { cn } from "@/lib/utils";
 
 export function SummarySectionNav() {

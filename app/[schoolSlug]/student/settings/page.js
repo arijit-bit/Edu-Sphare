@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import { StudentShell } from "@/app/student/student-ui";
+import { StudentShell } from "@/components/shells/student-ui";
 import {
   Card,
   CardContent,
@@ -906,3 +906,4 @@ export default function SettingsPage() {
     </StudentShell>
   );
 }
+

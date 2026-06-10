@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FinanceShell, PageHeader } from "@/app/finance/analytics-ui";
+import { FinanceShell, PageHeader } from "@/components/shells/finance-ui";
 import {
   Card,
   CardContent,
@@ -381,3 +381,4 @@ export default function FinanceSettingsPage() {
     </FinanceShell>
   );
 }
+

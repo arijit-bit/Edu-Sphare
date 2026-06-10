@@ -4,15 +4,15 @@ import {
   FinanceShell,
   PageHeader,
   StatCard,
-} from "@/app/finance/analytics-ui";
+} from "@/components/shells/finance-ui";
 import {
   auditorHighlights,
   categoryBalanceData,
   combinedTrendData,
   expenseDistribution,
   summaryMetrics,
-} from "@/app/finance/summary/summary-data";
-import { SummarySectionNav } from "@/app/finance/summary/section-nav";
+} from "@/app/[schoolSlug]/finance/summary/summary-data";
+import { SummarySectionNav } from "@/app/[schoolSlug]/finance/summary/section-nav";
 import { DistributionDonutChart } from "@/components/finance/distribution-donut-chart";
 import { FinanceBalanceChart } from "@/components/finance/finance-balance-chart";
 import { Button } from "@/components/ui/button";
@@ -204,3 +204,4 @@ export default function FinanceSummaryPage() {
     </FinanceShell>
   );
 }
+

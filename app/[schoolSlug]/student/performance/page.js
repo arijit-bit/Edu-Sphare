@@ -1,6 +1,6 @@
 "use client";
 
-import { StudentShell, ProgressRing } from "@/app/student/student-ui";
+import { StudentShell, ProgressRing } from "@/components/shells/student-ui";
 import {
   Card,
   CardContent,
@@ -261,3 +261,4 @@ export default function StudentPerformancePage() {
     </StudentShell>
   );
 }
+

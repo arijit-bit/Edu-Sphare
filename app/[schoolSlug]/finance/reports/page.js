@@ -6,7 +6,7 @@ import {
   PageHeader,
   StatCard,
   StatusBadge,
-} from "@/app/finance/analytics-ui";
+} from "@/components/shells/finance-ui";
 import {
   Card,
   CardContent,
@@ -435,3 +435,4 @@ export default function ReportsPage() {
     </FinanceShell>
   );
 }
+

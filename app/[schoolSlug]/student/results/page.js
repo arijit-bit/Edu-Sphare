@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { StudentShell } from "@/app/student/student-ui";
+import { StudentShell } from "@/components/shells/student-ui";
 import {
   Card,
   CardContent,
@@ -203,3 +203,4 @@ export default function StudentResultsPage() {
     </StudentShell>
   );
 }
+

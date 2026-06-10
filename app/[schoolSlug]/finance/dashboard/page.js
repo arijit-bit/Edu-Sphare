@@ -5,7 +5,7 @@ import {
   PageHeader,
   StatCard,
   StatusBadge,
-} from "@/app/finance/analytics-ui";
+} from "@/components/shells/finance-ui";
 import { DistributionDonutChart } from "@/components/finance/distribution-donut-chart";
 import { EarningsComparisonChart } from "@/components/finance/earnings-comparison-chart";
 import { Button } from "@/components/ui/button";
@@ -235,3 +235,4 @@ export default function DashboardOverviewPage() {
     </FinanceShell>
   );
 }
+

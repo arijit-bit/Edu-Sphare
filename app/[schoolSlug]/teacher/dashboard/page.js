@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
-import { useTeacherLayout } from "@/app/teacher/layout";
+import { useTeacherLayout } from "@/components/shells/teacher-layout";
 
 const stats = [
   { label: "Total Students", value: "186",   delta: "4 sections",     icon: Users,         tone: "blue"   },
@@ -218,3 +218,4 @@ export default function TeacherDashboard() {
     </div>
   );
 }
+

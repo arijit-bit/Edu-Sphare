@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { FinanceShell, PageHeader, StatusBadge } from "@/app/finance/analytics-ui";
+import { FinanceShell, PageHeader, StatusBadge } from "@/components/shells/finance-ui";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -893,3 +893,4 @@ export default function FinanceAuditPage() {
     </FinanceShell>
   );
 }
+

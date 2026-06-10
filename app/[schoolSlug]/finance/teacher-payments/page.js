@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FinanceShell, PageHeader, StatCard, StatusBadge } from "@/app/finance/analytics-ui";
+import { FinanceShell, PageHeader, StatCard, StatusBadge } from "@/components/shells/finance-ui";
 import { Button }   from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input }    from "@/components/ui/input";
@@ -228,3 +228,4 @@ export default function TeacherPaymentsPage() {
     </FinanceShell>
   );
 }
+
