@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   FileText,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -35,11 +36,10 @@ function getNavItems(schoolSlug) {
   return [
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
     { label: "Attendance", href: `${base}/attendence`, icon: UserCheck },
-    { label: "My Classes", href: "#", icon: BookOpen },
     { label: "Timetable", href: "#", icon: Calendar },
-    { label: "Assignments", href: "#", icon: ClipboardList },
     { label: "Students", href: "#", icon: Users },
     { label: "Marks Audit", href: `${base}/marksAudit`, icon: FileText },
+    { label: "Salary", href: `${base}/salary`, icon: Wallet },
     { label: "Messages", href: "#", icon: MessageSquare },
     { label: "Settings", href: "#", icon: Settings },
   ];
@@ -50,7 +50,7 @@ function getMobileNavItems(schoolSlug) {
   return [
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
     { label: "Attendance", href: `${base}/attendence`, icon: UserCheck },
-    { label: "Classes", href: "#", icon: BookOpen },
+    { label: "Salary", href: `${base}/salary`, icon: Wallet },
     { label: "Students", href: "#", icon: Users },
   ];
 }

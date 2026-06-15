@@ -913,4 +913,7 @@ body {
   html {
     @apply font-sans transition-colors duration-300;
   }
+  button:hover {
+    cursor: pointer;
+  }
 }

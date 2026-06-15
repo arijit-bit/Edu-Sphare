@@ -46,42 +46,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
-const navItems = [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Attendance",
-    icon: UserCheck,
-  },
-  {
-    label: "Grades",
-    icon: Upload,
-  },
-  {
-    label: "Announcements",
-    icon: Megaphone,
-  },
-  {
-    label: "Timetable",
-    icon: CalendarDays,
-  },
-  {
-    label: "Salary",
-    icon: Wallet,
-    active: true,
-  },
-  {
-    label: "Messages",
-    icon: MessageCircle,
-  },
-  {
-    label: "Quizzes",
-    icon: FileQuestion,
-  },
-];
-
 const salaryStats = [
   {
     label: "Net Earnings YTD",
@@ -213,17 +177,7 @@ export default function SalaryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
-        <Sidebar />
-
-        <main className="flex-1 overflow-x-hidden">
-          <Topbar
-            darkMode={darkMode}
-            onToggleTheme={toggleTheme}
-          />
-
-          <section className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 md:p-6 lg:p-8">
+    <section className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 md:p-6 lg:p-8 animate-fade-in">
             <PageHeader />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -239,112 +193,8 @@ export default function SalaryPage() {
             <PaymentRecordsTable
               query={query}
               setQuery={setQuery}
-              records={filteredRecords}
-            />
-          </section>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-function Sidebar() {
-  return (
-    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 border-r bg-card md:block">
-      <div className="flex h-full flex-col px-4 py-6">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <Avatar className="h-11 w-11">
-            <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop" />
-            <AvatarFallback>AP</AvatarFallback>
-          </Avatar>
-
-          <div>
-            <h1 className="text-lg font-bold text-primary">EduManager Pro</h1>
-            <p className="text-sm text-muted-foreground">Faculty Portal</p>
-          </div>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <Button
-                key={item.label}
-                variant={item.active ? "default" : "ghost"}
-                className={`justify-start gap-3 ${
-                  item.active ? "shadow-sm" : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            );
-          })}
-        </nav>
-
-        <Separator className="my-4" />
-
-        <div className="rounded-xl bg-muted p-4">
-          <p className="text-sm font-medium">Need help?</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Contact admin for salary or payslip-related issues.
-          </p>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function Topbar({ darkMode, onToggleTheme }) {
-  return (
-    <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 md:px-6 lg:px-8">
-        <div className="relative hidden w-full max-w-xl md:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="rounded-full pl-9"
-            placeholder="Search records, payslips, or help..."
-          />
-        </div>
-
-        <div className="md:hidden">
-          <h1 className="text-lg font-bold text-primary">EduManager Pro</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onToggleTheme}
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </Button>
-
-          <Button size="icon" variant="ghost">
-            <Bell className="h-5 w-5" />
-          </Button>
-
-          <Button size="icon" variant="ghost">
-            <HelpCircle className="h-5 w-5" />
-          </Button>
-
-          <Button size="icon" variant="ghost">
-            <Settings className="h-5 w-5" />
-          </Button>
-
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop" />
-            <AvatarFallback>AP</AvatarFallback>
-          </Avatar>
-        </div>
-      </div>
-    </header>
+              records={filteredRecords}/>
+    </section>
   );
 }
 

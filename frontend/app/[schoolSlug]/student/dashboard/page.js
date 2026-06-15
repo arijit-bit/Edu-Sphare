@@ -120,7 +120,7 @@ const upcomingExams = [
   },
 ];
 
-const quickActions = [
+const getQuickActions = (schoolSlug) => [
   { label: "View Results", icon: FileText, href: `/${schoolSlug}/student/results`, variant: "default" },
   { label: "Download Timetable", icon: Download, href: `/${schoolSlug}/student/timetable`, variant: "outline" },
   { label: "Submit Feedback", icon: MessageSquare, href: `/${schoolSlug}/student/feedback`, variant: "outline" },
@@ -352,7 +352,7 @@ export default function CombinedStudentDashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {quickActions.map((action) => {
+                  {getQuickActions(schoolSlug).map((action) => {
                     const Icon = action.icon;
                     return (
                       <Button

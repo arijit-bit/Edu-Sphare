@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 
@@ -27,9 +28,10 @@ export default function RootLayout({ children }) {
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <head>
-        <script
+      <body className="min-h-full font-sans antialiased">
+        <Script
           id="theme-toggle-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -50,8 +52,6 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-      </head>
-      <body className="min-h-full font-sans antialiased">
         <LanguageProvider>
           <ThemeProvider
             defaultTheme="system"
@@ -64,3 +64,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+

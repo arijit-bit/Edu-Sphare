@@ -1,24 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 
 import { summaryTabs } from "@/app/[schoolSlug]/finance/summary/summary-data";
 import { cn } from "@/lib/utils";
 
 export function SummarySectionNav() {
   const pathname = usePathname() || "";
+  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const getTabHref = (href) => href.replace(/^\/finance/, `/${schoolSlug}/finance`);
 
   return (
     <div className="rounded-2xl border bg-card/70 p-1 shadow-sm">
       <div className="grid gap-1 sm:grid-cols-3">
         {summaryTabs.map((tab) => {
-          const isActive = pathname === tab.href;
+          const tabHref = getTabHref(tab.href);
+          const isActive = pathname === tabHref;
 
           return (
             <Link
               key={tab.href}
-              href={tab.href}
+              href={tabHref}
               className={cn(
                 "rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200",
                 isActive
