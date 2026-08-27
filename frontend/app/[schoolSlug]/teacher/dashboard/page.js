@@ -76,7 +76,7 @@ export default function TeacherDashboard() {
             <p className="text-sm text-muted-foreground">Friday, May 23, 2026 · Mathematics Department</p>
           </div>
           <Button size="sm" asChild>
-            <Link href={`/${(useParams()?.schoolSlug ?? "dummy-school")}/teacher/attendence`}>
+            <Link href={`/${(useParams()?.schoolSlug ?? "dummy-school")}/teacher/attendance`}>
               <Plus className="mr-2 size-4" />Mark Attendance
             </Link>
           </Button>

@@ -3,188 +3,170 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  GraduationCap, Users, BarChart3, Shield,
-  Eye, EyeOff, ArrowRight, Mail, Lock, User, Phone
-} from "lucide-react";
-import { DesktopAuthArt } from "@/components/auth/desktop-auth-art";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-
-const roles = [
-  { id: "student", label: "Student",  icon: GraduationCap, color: "text-blue-600",   bg: "bg-blue-50 dark:bg-blue-950/30"    },
-  { id: "teacher", label: "Teacher",  icon: Users,          color: "text-teal-600",   bg: "bg-teal-50 dark:bg-teal-950/30"    },
-  { id: "finance", label: "Finance",  icon: BarChart3,      color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-  { id: "admin",   label: "Admin",    icon: Shield,         color: "text-rose-600",   bg: "bg-rose-50 dark:bg-rose-950/30"    },
-];
-
-const roleHrefs = {
-  student: "/student/dashboard",
-  teacher: "/teacher/dashboard",
-  finance: "/finance/dashboard",
-  admin: "/admin/dashboard",
-};
+import { ArrowRight, Mail, Lock, User } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole]           = useState("student");
-  const [fullName, setFullName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [phone, setPhone]         = useState("");
-  const [classNum, setClassNum]   = useState("");
-  const [password, setPassword]   = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [showPw, setShowPw]       = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!fullName || !email || !password) { setError("Please fill in all required fields."); return; }
-    if (password !== confirmPw) { setError("Passwords do not match."); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    setError("");
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      router.push(roleHrefs[role] || "/");
-    }, 1200);
+      router.push("/student/dashboard");
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-background flex lg:h-screen lg:overflow-hidden">
-      <DesktopAuthArt />
+    <div className="min-h-screen bg-[#2A2A2B] flex items-center justify-center p-4">
+      {/* Main Card */}
+      <div className="w-full max-w-[1000px] h-[650px] bg-white rounded-[32px] overflow-hidden flex shadow-2xl relative">
+        
+        {/* Left Side (Blue Background with Curve) */}
+        <div className="relative w-[45%] h-full bg-[#0066FF] hidden md:flex flex-col items-center justify-center p-8 z-10 text-white">
+          {/* Custom SVG Curve for the right edge */}
+          <svg 
+            className="absolute top-0 right-0 h-full w-[120px] translate-x-[99%] text-[#0066FF]" 
+            preserveAspectRatio="none" 
+            viewBox="0 0 100 100" 
+            fill="currentColor"
+          >
+            <path d="M0,0 C80,0 120,40 50,70 C10,85 40,100 0,100 Z" />
+          </svg>
 
-      {/* Right Form */}
-      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto p-6 lg:h-screen lg:w-1/2 lg:flex-none lg:overflow-y-auto lg:p-12">
-        <div className="w-full max-w-md lg:min-h-fit">
-          {/* Mobile Brand */}
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="size-4" />
-            </div>
-            <span className="text-base font-bold">Edu Sphare</span>
+          {/* User's illustration will go here */}
+          <div className="relative z-20 w-full max-w-[250px] aspect-square flex items-center justify-center">
+             {/* You can replace this img with the actual SVG you attached for registration */}
+             <div className="w-full h-full bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg">
+                <span className="text-white/80 text-sm text-center px-4 font-medium">Your Register SVG Illustration<br/>(Replace with your attached file)</span>
+             </div>
           </div>
+        </div>
 
-          <h2 className="text-2xl font-bold tracking-tight">Create your account</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="font-semibold text-primary hover:underline">Sign in</Link>
-          </p>
-
-          {/* Role Selector */}
-          <div className="mt-6 grid grid-cols-4 gap-2">
-            {roles.map((r) => {
-              const Icon = r.icon;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => setRole(r.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-semibold transition-all cursor-pointer",
-                    role === r.id
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-transparent bg-muted/50 text-muted-foreground hover:border-border hover:bg-muted"
-                  )}
-                >
-                  <Icon className={cn("size-5", role === r.id ? "text-primary" : r.color)} />
-                  {r.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-            {error && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} className="pl-10" placeholder="Aarav Sharma" required />
+        {/* Right Side (Form) */}
+        <div className="w-full md:w-[55%] h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-20 bg-white relative z-20 overflow-y-auto">
+          
+          <div className="w-full max-w-[340px] flex flex-col items-center py-8">
+            {/* Logo area */}
+            <div className="flex flex-col items-center mb-8">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-md bg-[#2A2A2B] text-white flex items-center justify-center font-bold text-lg leading-none">
+                  e
+                </div>
+                <h1 className="text-3xl font-bold text-[#2A2A2B] tracking-tight">edusphare</h1>
               </div>
+              <p className="text-sm text-gray-500 font-medium">Create your account</p>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="regEmail">Email Address <span className="text-destructive">*</span></Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input id="regEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" placeholder="you@edusphare.edu" required />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-10" placeholder="+91 98765 43210" />
-              </div>
-            </div>
-
-            {role === "student" && (
-              <div className="space-y-1.5">
-                <Label>Class / Grade</Label>
-                <Select value={classNum} onValueChange={setClassNum}>
-                  <SelectTrigger><SelectValue placeholder="Select your class" /></SelectTrigger>
-                  <SelectContent>
-                    {["6","7","8","9","10","11","12"].map((c) => (
-                      <SelectItem key={c} value={c}>Class {c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="regPassword">Password <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                  <Input id="regPassword" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" placeholder="Min 8 chars" required />
+            <form onSubmit={handleSubmit} className="w-full space-y-6">
+              {/* Full Name Input */}
+              <div className="space-y-1 relative group">
+                <div className="flex items-center border-b border-gray-300 group-focus-within:border-[#0066FF] transition-colors pb-2">
+                  <User className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="fullName"
+                    type="text"
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                  <Input id="confirmPassword" type={showPw ? "text" : "password"} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} className="pl-10" placeholder="Repeat password" required />
+
+              {/* Email Input */}
+              <div className="space-y-1 relative group">
+                <div className="flex items-center border-b border-gray-300 group-focus-within:border-[#0066FF] transition-colors pb-2">
+                  <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <input id="showPw" type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} className="size-4 rounded accent-primary cursor-pointer" />
-              <Label htmlFor="showPw" className="text-sm cursor-pointer font-normal">Show passwords</Label>
-            </div>
+              {/* Password Input */}
+              <div className="space-y-1 relative group">
+                <div className="flex items-center border-b border-gray-300 group-focus-within:border-[#0066FF] transition-colors pb-2">
+                  <Lock className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="flex items-start gap-2">
-              <input id="terms" type="checkbox" required className="mt-0.5 size-4 rounded accent-primary cursor-pointer" />
-              <Label htmlFor="terms" className="text-sm cursor-pointer font-normal leading-relaxed">
-                I agree to the{" "}
-                <a href="#" className="text-primary hover:underline">Terms of Service</a>
-                {" "}and{" "}
-                <a href="#" className="text-primary hover:underline">Privacy Policy</a>
-              </Label>
-            </div>
+              {/* Confirm Password Input */}
+              <div className="space-y-1 relative group">
+                <div className="flex items-center border-b border-gray-300 group-focus-within:border-[#0066FF] transition-colors pb-2">
+                  <Lock className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
+                </div>
+              </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Creating account…
+              {/* Terms Checkbox */}
+              <div className="flex items-start mt-4 pt-2">
+                <label className="flex items-start gap-2 cursor-pointer group">
+                  <div className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center group-hover:border-[#0066FF] transition-colors mt-0.5 flex-shrink-0">
+                    <div className="w-2.5 h-2.5 bg-transparent rounded-sm group-has-[:checked]:bg-[#0066FF]" />
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    required
+                  />
+                  <span className="text-xs text-gray-500 font-medium leading-relaxed">
+                    I agree to the <a href="#" className="text-[#0066FF] hover:underline">Terms</a> and <a href="#" className="text-[#0066FF] hover:underline">Privacy Policy</a>
+                  </span>
+                </label>
+              </div>
+
+              {/* Register Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-[220px] mx-auto h-12 bg-[#0066FF] hover:bg-blue-700 text-white rounded-full flex items-center justify-center font-medium transition-all shadow-md mt-8 relative group"
+              >
+                {/* Green Arrow Icon styling like in the mock */}
+                <div className="absolute left-2 w-8 h-8 rounded-full bg-[#4ADE80] flex items-center justify-center text-white">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+                <span className="ml-6 uppercase tracking-wider text-sm font-bold">
+                  {loading ? "Creating..." : "Register"}
                 </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Create Account <ArrowRight className="size-4" />
-                </span>
-              )}
-            </Button>
-          </form>
+              </button>
+            </form>
+
+            <div className="mt-8 text-center pb-4">
+              <Link href="/auth/login" className="text-xs text-gray-400 font-medium hover:text-[#0066FF] transition-colors">
+                Already have an account? <span className="text-gray-700 font-bold hover:underline">Sign in</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
