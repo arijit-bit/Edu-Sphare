@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
+import { headers } from "next/headers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +21,10 @@ export const metadata = {
   keywords: ["school management", "education portal", "student dashboard", "academic performance"],
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const headersList = await headers();
+  const nonce = headersList.get("x-nonce") || "";
+
   return (
     <html
       lang="en"
@@ -32,6 +36,7 @@ export default function RootLayout({ children }) {
         <Script
           id="theme-toggle-init"
           strategy="beforeInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

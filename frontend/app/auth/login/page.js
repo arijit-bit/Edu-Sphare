@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, User, Lock, Check } from "lucide-react";
@@ -19,7 +19,11 @@ export default function LoginPage() {
   // Bots fill it in; humans never see it and leave it blank.
   const [honeypot, setHoneypot] = useState("");
   // Track page-load time to reject submissions that happen unrealistically fast
-  const [loadTime] = useState(() => Date.now());
+  const [loadTime, setLoadTime] = useState(0);
+
+  useEffect(() => {
+    setLoadTime(Date.now());
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
