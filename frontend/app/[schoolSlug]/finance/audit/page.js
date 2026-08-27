@@ -322,7 +322,7 @@ export default function FinanceAuditPage() {
       left: activeEl.offsetLeft,
       top: activeEl.offsetTop,
     });
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     // RAF to let base-ui update the active attribute first

@@ -108,6 +108,7 @@ export default function LoginPage() {
         <div className="blue-circle absolute rounded-full bg-white w-[600px] h-[900px] left-30 top-70 "></div>
           {/* User's illustration will go here */}
           <div className="relative z-20 w-full max-w-[320px] flex items-center justify-center">
+             {/* eslint-disable-next-line @next/next/no-img-element */}
              <img src="/20944363.svg" alt="Login Illustration" className="w-full h-auto drop-shadow-2xl" />
           </div>
         </div>
