@@ -3,183 +3,250 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  GraduationCap, Users, BarChart3, Shield,
-  Eye, EyeOff, ArrowRight, Lock, Mail
-} from "lucide-react";
-import { DesktopAuthArt } from "@/components/auth/desktop-auth-art";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-
-const roles = [
-  { id: "student", label: "Student",  icon: GraduationCap, href: "/student/dashboard",  color: "text-blue-600",   bg: "bg-blue-50 dark:bg-blue-950/30"   },
-  { id: "teacher", label: "Teacher",  icon: Users,          href: "/teacher/dashboard",  color: "text-teal-600",   bg: "bg-teal-50 dark:bg-teal-950/30"   },
-  { id: "finance", label: "Finance",  icon: BarChart3,      href: "/finance/dashboard",  color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
-  { id: "admin",   label: "Admin",    icon: Shield,         href: "/admin/dashboard",    color: "text-rose-600",   bg: "bg-rose-50 dark:bg-rose-950/30"   },
-];
+import { ArrowRight, User, Lock, Check } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole]             = useState("student");
-  const [email, setEmail]           = useState("");
-  const [password, setPassword]     = useState("");
-  const [showPw, setShowPw]         = useState(false);
-  const [remember, setRemember]     = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState("");
+  const [email, setEmail] = useState("");
+  const [schoolSlug, setSchoolSlug] = useState(process.env.NEXT_PUBLIC_DEFAULT_SCHOOL_SLUG || "");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const selectedRole = roles.find((r) => r.id === role);
+  // ── Bot protection ────────────────────────────────────────────────────────
+  // Honeypot field: hidden from humans via CSS (not display:none — bots detect that).
+  // Bots fill it in; humans never see it and leave it blank.
+  const [honeypot, setHoneypot] = useState("");
+  // Track page-load time to reject submissions that happen unrealistically fast
+  const [loadTime] = useState(() => Date.now());
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) { setError("Please fill in all fields."); return; }
     setError("");
-    setLoading(true);
-    setTimeout(() => {
+
+    // ── Bot detection ─────────────────────────────────────────────────────
+    // 1. Honeypot: if the hidden field has any value, it's a bot
+    if (honeypot) {
+      // Silently fake a successful delay so bots think they won — never hit backend
+      setLoading(true);
+      await new Promise((r) => setTimeout(r, 1800));
       setLoading(false);
-      router.push(selectedRole?.href || "/");
-    }, 1000);
+      return;
+    }
+    // 2. Timing: humans take >1.5s to fill a form; bots submit instantly
+    if (Date.now() - loadTime < 1500) {
+      setError("Please try again.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+
+      // ① Fetch a CSRF token from the backend before submitting credentials.
+      //    This implements the Double-Submit Cookie pattern.
+      let csrfToken = "";
+      try {
+        const csrfRes = await fetch(`${baseUrl}/v1/csrf-token`, { credentials: "include" });
+        if (csrfRes.ok) {
+          const csrfData = await csrfRes.json();
+          csrfToken = csrfData.csrfToken ?? "";
+        }
+      } catch {
+        // If CSRF endpoint is unreachable (e.g. dev without backend), proceed anyway.
+        // The backend will reject mutating requests without a valid token in production.
+      }
+
+      // ② Submit login credentials
+      const response = await fetch(`${baseUrl}/v1/auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        },
+        body: JSON.stringify({ schoolSlug: schoolSlug.trim(), login: email, password, remember }),
+      });
+
+      const payload = await response.json();
+
+      // ③ Map status codes to safe, user-facing messages — never expose internals
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 422) {
+          throw new Error("Invalid school code, email, or password.");
+        } else if (response.status === 429) {
+          throw new Error("Too many attempts. Please wait a minute and try again.");
+        } else {
+          throw new Error("Unable to sign in. Please try again.");
+        }
+      }
+
+      // ④ Successful login — route by primary role
+      const role = payload.data.roles.includes("admin") ? "admin"
+        : payload.data.roles.includes("finance") ? "finance"
+        : payload.data.roles.includes("teacher") ? "teacher" : "student";
+
+      router.push(`/${payload.data.schoolSlug}/${role}/dashboard`);
+    } catch (requestError) {
+      setLoading(false);
+      setError(requestError.message || "Unable to sign in. Please try again.");
+    }
   };
 
+
   return (
-    <div className="min-h-screen bg-background flex lg:h-screen lg:overflow-hidden">
-      <DesktopAuthArt />
-
-      {/* Right Form Panel */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6 lg:h-screen lg:w-1/2 lg:flex-none lg:overflow-y-auto lg:p-12">
-        <div className="w-full max-w-md lg:min-h-fit">
-          {/* Mobile Brand */}
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="size-4" />
-            </div>
-            <span className="text-base font-bold">Edu Sphare</span>
+    <div className="min-h-screen bg-[#2A2A2B] flex items-center justify-center p-4">
+      {/* Main Card */}
+      <div className="w-full max-w-[1000px] h-[600px] bg-white rounded-[32px] overflow-hidden flex shadow-2xl relative">
+        
+        {/* Left Side (Illustration) */}
+        <div className="relative w-[45%] h-full bg-white hidden md:flex flex-col items-center justify-center p-8 z-10">
+        <div className="blue-circle absolute rounded-full bg-blue-600 w-[600px] h-[900px] right-20 bottom-70 "></div>
+        <div className="blue-circle absolute rounded-full bg-blue-600 w-[600px] h-[900px] right-30 top-70 "></div>
+        <div className="blue-circle absolute rounded-full bg-white w-[600px] h-[900px] left-30 top-70 "></div>
+          {/* User's illustration will go here */}
+          <div className="relative z-20 w-full max-w-[320px] flex items-center justify-center">
+             <img src="/20944363.svg" alt="Login Illustration" className="w-full h-auto drop-shadow-2xl" />
           </div>
+        </div>
 
-          <h2 className="text-2xl font-bold tracking-tight">Sign in to your account</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/register" className="font-semibold text-primary hover:underline">
-              Register here
-            </Link>
-          </p>
-
-          {/* Role Selector */}
-          <div className="mt-6 grid grid-cols-4 gap-2">
-            {roles.map((r) => {
-              const Icon = r.icon;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => setRole(r.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-semibold transition-all cursor-pointer",
-                    role === r.id
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-transparent bg-muted/50 text-muted-foreground hover:border-border hover:bg-muted"
-                  )}
-                >
-                  <Icon className={cn("size-5", role === r.id ? "text-primary" : r.color)} />
-                  {r.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
-            {error && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
+        {/* Right Side (Form) */}
+        <div className="w-full md:w-[55%] h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 bg-white relative z-20">
+          
+          <div className="w-full max-w-[320px] flex flex-col items-center">
+            {/* Logo area */}
+            <div className="flex flex-col items-center mb-10">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-md bg-[#2A2A2B] text-white flex items-center justify-center font-bold text-lg leading-none">
+                  e
+                </div>
+                <h1 className="text-3xl font-bold text-[#2A2A2B] tracking-tight">edusphare</h1>
               </div>
-            )}
+              <p className="text-sm text-gray-500 font-medium">Access your account</p>
+            </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  placeholder="you@edusphare.edu"
+            <form onSubmit={handleSubmit} className="w-full space-y-6">
+              {/*
+                Bot protection — honeypot field.
+                Visually hidden off-screen (NOT display:none — bots skip those).
+                Legitimate users never see or fill this. Bots auto-fill it → blocked.
+                The tabIndex=-1 and autoComplete=off further discourage accidental fills.
+              */}
+              <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "auto", width: "1px", height: "1px", overflow: "hidden" }}>
+                <label htmlFor="website">Website</label>
+                <input
+                  id="website"
+                  name="website"
+                  type="text"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
                 />
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="password"
-                  type={showPw ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPw ? "Hide password" : "Show password"}
-                >
-                  {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                id="remember"
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="size-4 rounded accent-primary cursor-pointer"
-              />
-              <Label htmlFor="remember" className="text-sm cursor-pointer font-normal">Remember me for 30 days</Label>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Signing in…
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Sign in as {selectedRole?.label} <ArrowRight className="size-4" />
-                </span>
+              {/* Error Message Display */}
+              {error && (
+                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm text-center font-medium animate-in fade-in zoom-in duration-300">
+                  {error}
+                </div>
               )}
-            </Button>
-          </form>
 
-          {/* Quick Demo */}
-          <div className="mt-6">
-            <p className="text-center text-xs text-muted-foreground mb-3">Quick demo access</p>
-            <div className="grid grid-cols-2 gap-2">
-              {roles.map((r) => (
-                <Button
-                  key={r.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(r.href)}
-                  className="text-xs"
+              {/* Email or ID Input */}
+              <div className="space-y-1 relative group">
+                <div className={`flex items-center border-b ${error ? 'border-red-300' : 'border-gray-300'} group-focus-within:border-[#0066FF] transition-colors pb-2`}>
+                  <User className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="schoolSlug"
+                    type="text"
+                    placeholder="School code (for example, greenwood-high)"
+                    value={schoolSlug}
+                    onChange={(e) => setSchoolSlug(e.target.value.toLowerCase())}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                    pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1 relative group">
+                <div className={`flex items-center border-b ${error ? 'border-red-300' : 'border-gray-300'} group-focus-within:border-[#0066FF] transition-colors pb-2`}>
+                  <User className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="loginId"
+                    type="text"
+                    placeholder="Email or ID"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-1 relative group mt-6">
+                <div className={`flex items-center border-b ${error ? 'border-red-300' : 'border-gray-300'} group-focus-within:border-[#0066FF] transition-colors pb-2`}>
+                  <Lock className="w-4 h-4 text-gray-400 mr-3" />
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Options */}
+              <div className="flex items-center justify-between mt-4">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${remember ? 'bg-[#0066FF] border-[#0066FF]' : 'border-gray-300 group-hover:border-[#0066FF]'}`}>
+                    {remember && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  <span className="text-xs text-gray-500 font-medium">Keep me signed in</span>
+                </label>
+
+                <a href="#" className="text-xs text-[#0066FF] font-medium hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-[200px] mx-auto h-12 bg-[#0066FF] hover:bg-blue-700 text-white rounded-full flex items-center justify-center font-medium transition-all shadow-md mt-10 relative group overflow-hidden"
+              >
+                {/* Green Arrow Icon styling like in the mock */}
+                {/* Using ease-in-out for slow-fast-slow animation, increased duration to 700ms for smoothness */}
+                <div 
+                  className={`absolute top-2 z-10 w-8 h-8 rounded-full bg-[#4ADE80] flex items-center justify-center text-white transition-all duration-700 ease-in-out ${
+                    loading ? "left-[160px]" : "left-2"
+                  }`}
                 >
-                  {r.label} Demo
-                </Button>
-              ))}
-            </div>
+                  {loading ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
+                </div>
+                <span 
+                  className="absolute w-full text-center uppercase tracking-wider text-sm font-bold z-0"
+                >
+                  {loading ? "Signing in..." : "Login"}
+                </span>
+              </button>
+            </form>
           </div>
         </div>
       </div>

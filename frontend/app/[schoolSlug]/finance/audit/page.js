@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 
 import { FinanceShell, PageHeader, StatusBadge } from "@/components/shells/finance-ui";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -38,6 +41,7 @@ import {
   CreditCard,
   ShieldCheck,
   UserCheck,
+  ChevronDown,
 } from "lucide-react";
 
 const MONTH_OPTIONS = ["April 2026", "May 2026", "June 2026", "July 2026"];
@@ -291,6 +295,45 @@ export default function FinanceAuditPage() {
   const [otherDate, setOtherDate] = useState("2026-05-24");
   const [otherMonth, setOtherMonth] = useState("May 2026");
 
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const formattedOtherDate = useMemo(() => {
+    const parsed = new Date(`${otherDate}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return "Select date";
+    return format(parsed, "PPP");
+  }, [otherDate]);
+
+  // ── Sliding indicator refs & state ──
+  const tabsListRef = useRef(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, height: 0, left: 0, top: 0 });
+
+  const updateIndicator = useCallback(() => {
+    const list = tabsListRef.current;
+    if (!list) return;
+
+    // Walk the DOM to find the actual rendered element with position: relative
+    // base-ui may wrap our element, so search broadly
+    const activeEl = list.querySelector('[data-active]') || list.querySelector('[data-selected]');
+    if (!activeEl) return;
+
+    // Use offsetLeft/offsetTop which are relative to offsetParent
+    setIndicatorStyle({
+      width: activeEl.offsetWidth,
+      height: activeEl.offsetHeight,
+      left: activeEl.offsetLeft,
+      top: activeEl.offsetTop,
+    });
+  }, [activeTab]);
+
+  useEffect(() => {
+    // RAF to let base-ui update the active attribute first
+    const raf = requestAnimationFrame(() => updateIndicator());
+    window.addEventListener("resize", updateIndicator);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [updateIndicator]);
+
   const showToast = (message) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(""), 3000);
@@ -458,33 +501,51 @@ export default function FinanceAuditPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="relative grid h-auto w-full grid-cols-3 gap-1 overflow-hidden rounded-2xl border bg-muted/70 p-1.5 shadow-sm sm:gap-2">
+        <TabsList ref={tabsListRef} className="relative inline-flex h-auto w-full flex-col gap-1 rounded-[20px] bg-muted/30 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:bg-black/20 sm:h-11 sm:w-fit sm:flex-row">
+          {/* Sliding indicator */}
           <div
             aria-hidden="true"
-            className={`absolute bottom-1.5 top-1.5 z-0 w-[calc((100%-0.75rem)/3)] rounded-xl border border-primary/20 bg-primary/10 shadow-sm ring-1 ring-primary/10 transition-transform duration-300 ease-out dark:border-primary/25 dark:bg-primary/20 dark:ring-primary/15 ${
-              activeTab === "teachers"
-                ? "translate-x-0"
-                : activeTab === "students"
-                  ? "translate-x-[calc(100%+0.25rem)] sm:translate-x-[calc(100%+0.5rem)]"
-                  : "translate-x-[calc(200%+0.5rem)] sm:translate-x-[calc(200%+1rem)]"
-            }`}
+            className="pointer-events-none absolute z-0 rounded-[14px] bg-primary shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+            style={{
+              width: indicatorStyle.width,
+              height: indicatorStyle.height,
+              left: indicatorStyle.left,
+              top: indicatorStyle.top,
+              opacity: indicatorStyle.width ? 1 : 0,
+            }}
           />
+
           <TabsTrigger
             value="teachers"
-            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
           >
+            <UserCheck className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
             Teacher Audit
+            {teacherPendingCount > 0 && (
+              <span className="ml-1 flex h-4 min-w-[18px] items-center justify-center rounded-full bg-white/20 px-1.5 text-[9px] font-extrabold transition-colors group-data-active:bg-white/25 group-data-active:text-primary-foreground">
+                {teacherPendingCount}
+              </span>
+            )}
           </TabsTrigger>
+
           <TabsTrigger
             value="students"
-            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
           >
+            <ShieldCheck className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
             Student Audit
+            {studentPendingCount > 0 && (
+              <span className="ml-1 flex h-4 min-w-[18px] items-center justify-center rounded-full bg-white/20 px-1.5 text-[9px] font-extrabold transition-colors group-data-active:bg-white/25 group-data-active:text-primary-foreground">
+                {studentPendingCount}
+              </span>
+            )}
           </TabsTrigger>
+
           <TabsTrigger
             value="other"
-            className="relative z-10 h-auto min-h-12 rounded-xl border-0 bg-transparent px-2 py-2.5 text-[11px] leading-tight whitespace-normal text-center after:hidden data-active:bg-transparent data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-transparent"
+            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
           >
+            <CircleDollarSign className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
             Ledger
           </TabsTrigger>
         </TabsList>
@@ -689,9 +750,37 @@ export default function FinanceAuditPage() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 flex flex-col">
                   <Label>Date</Label>
-                  <Input type="date" value={otherDate} onChange={(e) => setOtherDate(e.target.value)} />
+                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <PopoverTrigger
+                      render={(triggerProps) => (
+                        <Button
+                          {...triggerProps}
+                          type="button"
+                          variant="outline"
+                          data-empty={!otherDate}
+                          className="h-10 w-full justify-between rounded-md px-3 text-left font-normal data-[empty=true]:text-muted-foreground bg-background"
+                        >
+                          {otherDate ? <span>{formattedOtherDate}</span> : <span>Pick a date</span>}
+                          <ChevronDown className="size-4 text-muted-foreground opacity-50" />
+                        </Button>
+                      )}
+                    />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarPicker
+                        mode="single"
+                        selected={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
+                        onSelect={(selectedDate) => {
+                          if (!selectedDate) return;
+                          setOtherDate(format(selectedDate, "yyyy-MM-dd"));
+                          setDatePickerOpen(false);
+                        }}
+                        defaultMonth={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
+                        captionLayout="dropdown"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <Button className="w-full gap-2" onClick={submitOtherEntry}>

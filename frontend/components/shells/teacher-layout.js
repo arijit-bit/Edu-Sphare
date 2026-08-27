@@ -34,7 +34,7 @@ function getNavItems(schoolSlug) {
   const base = `/${schoolSlug}/teacher`;
   return [
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
-    { label: "Attendance", href: `${base}/attendence`, icon: UserCheck },
+    { label: "Attendance", href: `${base}/attendance`, icon: UserCheck },
     { label: "My Classes", href: "#", icon: BookOpen },
     { label: "Timetable", href: "#", icon: Calendar },
     { label: "Assignments", href: "#", icon: ClipboardList },
@@ -49,7 +49,7 @@ function getMobileNavItems(schoolSlug) {
   const base = `/${schoolSlug}/teacher`;
   return [
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
-    { label: "Attendance", href: `${base}/attendence`, icon: UserCheck },
+    { label: "Attendance", href: `${base}/attendance`, icon: UserCheck },
     { label: "Classes", href: "#", icon: BookOpen },
     { label: "Students", href: "#", icon: Users },
   ];
@@ -59,21 +59,18 @@ export default function TeacherLayout({ children }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme } = useTheme();
-  const [resolvedTheme, setResolvedTheme] = useState("dark");
+  const [systemTheme, setSystemTheme] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  );
   const { schoolSlug = "dummy-school" } = useParams() || {};
   const navItems = getNavItems(schoolSlug);
   const mobileBottomNavItems = getMobileNavItems(schoolSlug);
 
   useEffect(() => {
-    if (theme === "light" || theme === "dark") {
-      setResolvedTheme(theme);
-      return;
-    }
+    if (theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyTheme = () => setResolvedTheme(mediaQuery.matches ? "dark" : "light");
-
-    applyTheme();
+    const applyTheme = () => setSystemTheme(mediaQuery.matches ? "dark" : "light");
 
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener("change", applyTheme);
@@ -84,7 +81,7 @@ export default function TeacherLayout({ children }) {
     return () => mediaQuery.removeListener(applyTheme);
   }, [theme]);
 
-  const isDark = resolvedTheme === "dark";
+  const isDark = theme === "system" ? systemTheme === "dark" : theme === "dark";
 
   const teacherThemeVars = useMemo(
     () => ({

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "@/components/language-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -17,6 +18,7 @@ import {
   Bell,
   ChevronRight,
   Trophy,
+  LogOut,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -146,6 +148,31 @@ function SidebarContent({ pathname, onNavClick }) {
   const { t } = useLanguage();
   const { schoolSlug = "dummy-school" } = useParams() || {};
   const studentNavItems = getStudentNavItems(t, schoolSlug);
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+      // Fetch CSRF token before the mutating logout request
+      let csrfToken = "";
+      try {
+        const csrfRes = await fetch(`${baseUrl}/v1/csrf-token`, { credentials: "include" });
+        if (csrfRes.ok) {
+          const data = await csrfRes.json();
+          csrfToken = data.csrfToken ?? "";
+        }
+      } catch { /* proceed without token in dev */ }
+
+      await fetch(`${baseUrl}/v1/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+      });
+    } catch (_) {
+      // Always redirect — even if the API call fails
+    }
+    router.push("/auth/login");
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -199,11 +226,32 @@ function SidebarContent({ pathname, onNavClick }) {
             <p className="text-sm font-semibold text-foreground truncate">Aarav Malhotra</p>
             <p className="text-xs text-muted-foreground truncate">Grade 12-A</p>
           </div>
-          <Link href={`/${useParams()?.schoolSlug ?? "dummy-school"}/student/settings`}>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-              <Settings className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/${schoolSlug}/student/settings`}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                    <Settings className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top">{t("Settings")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleLogout}
+                  aria-label={t("Logout")}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">{t("Logout")}</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </div>

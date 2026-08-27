@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  # Backend (Node.js)
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      # Group all fastify ecosystem updates into one PR
+      fastify:
+        patterns:
+          - "fastify"
+          - "@fastify/*"
+      # Group all minor/patch updates together
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Frontend (Next.js)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      # Group all Radix UI updates
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+      # Group minor/patch
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"

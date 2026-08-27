@@ -1,0 +1,29 @@
+const required = ["DATABASE_URL", "PASSWORD_PEPPER"];
+
+export function config() {
+  const missing = required.filter((name) => !process.env[name]);
+  if (missing.length) throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  return {
+    environment: process.env.NODE_ENV ?? "development",
+    port: Number(process.env.PORT ?? 4000),
+    databaseUrl: process.env.DATABASE_URL,
+    webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+    cookieName: process.env.SESSION_COOKIE_NAME ?? "edu_sphare_session",
+    sessionTtlHours: Number(process.env.SESSION_TTL_HOURS ?? 12),
+    rememberSessionTtlHours: Number(process.env.REMEMBER_SESSION_TTL_HOURS ?? 720),
+    passwordPepper: process.env.PASSWORD_PEPPER,
+
+    // Rate limiting
+    rateLimitLoginMax: Number(process.env.RATE_LIMIT_LOGIN_MAX ?? 10),       // per window
+    rateLimitLoginWindowMs: Number(process.env.RATE_LIMIT_LOGIN_WINDOW_MS ?? 60_000), // 1 min
+    rateLimitGlobalMax: Number(process.env.RATE_LIMIT_GLOBAL_MAX ?? 200),
+    rateLimitGlobalWindowMs: Number(process.env.RATE_LIMIT_GLOBAL_WINDOW_MS ?? 60_000),
+
+    // Login lockout
+    loginMaxFailures: Number(process.env.LOGIN_MAX_FAILURES ?? 5),
+    loginLockoutMinutes: Number(process.env.LOGIN_LOCKOUT_MINUTES ?? 15),
+
+    // CSRF
+    csrfSecret: process.env.CSRF_SECRET,   // optional in dev; required in prod
+  };
+}
