@@ -5,6 +5,17 @@ import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
 
+// Suppress Recharts ResponsiveContainer layout warning during hydration
+if (typeof console !== "undefined") {
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    if (typeof args[0] === "string" && args[0].includes("The width(%s) and height(%s) of chart should be greater than 0")) {
+      return;
+    }
+    originalConsoleWarn(...args);
+  };
+}
+
 const THEMES = { light: "", dark: ".dark" };
 
 const ChartContext = React.createContext(null);
@@ -19,19 +30,15 @@ function useChart() {
   return context;
 }
 
-function ChartContainer({ id, className, children, config, ...props }) {
+const ChartContainer = React.forwardRef(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
-  const mounted = React.useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
 
   return (
     <ChartContext.Provider value={{ config }}>
       <div
         data-chart={chartId}
+        ref={ref}
         className={cn(
           "flex h-[260px] min-w-0 w-full items-center justify-center text-xs",
           className
@@ -39,15 +46,13 @@ function ChartContainer({ id, className, children, config, ...props }) {
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        {mounted ? (
-          <RechartsPrimitive.ResponsiveContainer>
-            {children}
-          </RechartsPrimitive.ResponsiveContainer>
-        ) : null}
+        <RechartsPrimitive.ResponsiveContainer>
+          {children}
+        </RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   );
-}
+});
 
 function ChartStyle({ id, config }) {
   const colorConfig = Object.entries(config).filter(([, value]) => value.color || value.theme);

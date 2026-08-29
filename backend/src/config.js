@@ -7,7 +7,13 @@ export function config() {
     environment: process.env.NODE_ENV ?? "development",
     port: Number(process.env.PORT ?? 4000),
     databaseUrl: process.env.DATABASE_URL,
-    webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+    // CORS: WEB_ORIGIN supports a comma-separated list for multi-origin setups
+    // e.g. "http://localhost:3000,https://edu-sphare.vercel.app"
+    webOrigin: (() => {
+      const raw = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+      const origins = raw.split(",").map((o) => o.trim()).filter(Boolean);
+      return origins.length === 1 ? origins[0] : origins;
+    })(),
     cookieName: process.env.SESSION_COOKIE_NAME ?? "edu_sphare_session",
     sessionTtlHours: Number(process.env.SESSION_TTL_HOURS ?? 12),
     rememberSessionTtlHours: Number(process.env.REMEMBER_SESSION_TTL_HOURS ?? 720),

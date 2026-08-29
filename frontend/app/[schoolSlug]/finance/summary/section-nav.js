@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export function SummarySectionNav() {
   const pathname = usePathname() || "";
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const getTabHref = (href) => href.replace(/^\/finance/, `/${schoolSlug}/finance`);
 
   return (

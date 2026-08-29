@@ -16,12 +16,21 @@ export function generateMetadata({ params }) {
 export default async function SchoolPortalPage({ params }) {
   const { schoolSlug } = await params;
 
+  // For the demo school: clicking a role goes to the login page with credentials
+  // pre-filled via query params. For real schools, users go straight to the dashboard
+  // (middleware will redirect to login if they are not authenticated).
+  const isDemoSchool = schoolSlug === "demo-school";
+  const roleHref = (roleId) =>
+    isDemoSchool
+      ? `/auth/login?role=${roleId}&school=${schoolSlug}`
+      : `/${schoolSlug}/${roleId}/dashboard`;
+
   const roles = [
     {
       id: "student",
       title: "Student",
       description: "Access your dashboard, view results, check timetable, and track academic performance.",
-      href: `/${schoolSlug}/student/dashboard`,
+      href: roleHref("student"),
       icon: GraduationCap,
       gradient: "from-blue-600 to-indigo-700",
       lightBg: "bg-blue-50 dark:bg-blue-950/30",
@@ -32,7 +41,7 @@ export default async function SchoolPortalPage({ params }) {
       id: "teacher",
       title: "Teacher",
       description: "Manage classes, mark attendance, submit grades, and communicate with students.",
-      href: `/${schoolSlug}/teacher/dashboard`,
+      href: roleHref("teacher"),
       icon: Users,
       gradient: "from-teal-600 to-emerald-700",
       lightBg: "bg-teal-50 dark:bg-teal-950/30",
@@ -43,7 +52,7 @@ export default async function SchoolPortalPage({ params }) {
       id: "finance",
       title: "Finance",
       description: "Track fee collections, manage payroll, generate reports, and analyze school finances.",
-      href: `/${schoolSlug}/finance/dashboard`,
+      href: roleHref("finance"),
       icon: BarChart3,
       gradient: "from-violet-600 to-purple-700",
       lightBg: "bg-violet-50 dark:bg-violet-950/30",
@@ -54,7 +63,7 @@ export default async function SchoolPortalPage({ params }) {
       id: "admin",
       title: "Admin",
       description: "Full system control — manage students, staff, finances, and school operations.",
-      href: `/${schoolSlug}/admin/dashboard`,
+      href: roleHref("admin"),
       icon: Shield,
       gradient: "from-rose-600 to-pink-700",
       lightBg: "bg-rose-50 dark:bg-rose-950/30",

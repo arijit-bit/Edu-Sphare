@@ -1,39 +1,22 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { format } from "date-fns";
 
 import { FinanceShell, PageHeader, StatusBadge } from "@/components/shells/finance-ui";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Check,
   CircleDollarSign,
@@ -42,7 +25,13 @@ import {
   ShieldCheck,
   UserCheck,
   ChevronDown,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  ListTodo
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const MONTH_OPTIONS = ["April 2026", "May 2026", "June 2026", "July 2026"];
 
@@ -77,12 +66,13 @@ function formatModeLabel(mode, transactionId) {
   return mode === "offline" ? "Paid via cash" : transactionId;
 }
 
+// ── Components ──
+
 function MonthPills({ selectedMonths, onToggle }) {
   return (
     <div className="flex flex-wrap gap-2">
       {MONTH_OPTIONS.map((month) => {
         const active = selectedMonths.includes(month);
-
         return (
           <button
             key={month}
@@ -102,180 +92,71 @@ function MonthPills({ selectedMonths, onToggle }) {
   );
 }
 
-function SummaryMetric({ label, value, hint, tone = "blue" }) {
+function FloatingStat({ icon: Icon, label, value, tone = "blue" }) {
   const tones = {
-    blue: {
-      card: "border-blue-200/70 bg-blue-50/80 dark:border-blue-900/60 dark:bg-blue-950/20",
-      value: "text-blue-700 dark:text-blue-300",
-      hint: "text-blue-600/80 dark:text-blue-300/80",
-      dot: "bg-blue-500",
-    },
-    emerald: {
-      card: "border-emerald-200/70 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20",
-      value: "text-emerald-700 dark:text-emerald-300",
-      hint: "text-emerald-600/80 dark:text-emerald-300/80",
-      dot: "bg-emerald-500",
-    },
-    amber: {
-      card: "border-amber-200/70 bg-amber-50/85 dark:border-amber-900/60 dark:bg-amber-950/20",
-      value: "text-amber-700 dark:text-amber-300",
-      hint: "text-amber-700/80 dark:text-amber-300/80",
-      dot: "bg-amber-500",
-    },
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
-  const palette = tones[tone] || tones.blue;
-
+  
   return (
-    <div className={`min-w-[190px] shrink-0 rounded-2xl border p-3 shadow-sm sm:min-w-[210px] sm:p-4 ${palette.card}`}>
-      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:text-[11px] sm:tracking-[0.18em]">
-        <span className={`size-2 rounded-full ${palette.dot}`} />
-        {label}
-      </p>
-      <p className={`mt-1.5 text-lg font-bold tracking-tight sm:mt-2 sm:text-2xl ${palette.value}`}>
-        {value}
-      </p>
-      <p className={`mt-1 text-[11px] leading-snug sm:text-xs ${palette.hint}`}>
-        {hint}
-      </p>
+    <div className="flex items-center gap-3 rounded-2xl bg-muted/40 px-4 py-3 shadow-sm backdrop-blur-md border border-border/50 transition-all hover:bg-muted/60">
+      <div className={cn("flex size-9 items-center justify-center rounded-full", tones[tone])}>
+        <Icon className="size-4.5" />
+      </div>
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-lg font-black leading-none text-foreground mt-0.5">{value}</p>
+      </div>
     </div>
   );
 }
 
-function QueueHeader({ icon: Icon, title, description, countLabel }) {
+function QueueListRow({ title, subtitle, icon: Icon, amount, meta, status, onClick }) {
+  const isPaid = status === "Paid";
+  
   return (
-    <div className="flex flex-col gap-3 border-b px-4 py-4 sm:px-6">
-      <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border/40 bg-card p-4 transition-all hover:border-primary/20 hover:shadow-md">
+      <div className="flex items-start gap-4">
+        <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-full border", isPaid ? "bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:border-emerald-900" : "bg-primary/10 border-primary/20 text-primary")}>
           <Icon className="size-5" />
         </div>
-        <div className="min-w-0">
-          <CardTitle className="text-base">{title}</CardTitle>
-          <CardDescription className="mt-1">{description}</CardDescription>
+        <div className="flex flex-col min-w-0">
+          <p className="font-bold text-foreground truncate">{title}</p>
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <span className="truncate">{subtitle}</span>
+            <span className="size-1 rounded-full bg-border" />
+            <span className="font-semibold text-foreground">{formatCurrency(amount)}</span>
+          </div>
         </div>
       </div>
-      <div className="flex items-center justify-between rounded-xl border bg-muted/30 px-3 py-2 text-sm">
-        <span className="font-medium text-foreground">Current work queue</span>
-        <span className="font-semibold text-muted-foreground">{countLabel}</span>
+      
+      <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-0 pt-3 sm:pt-0 mt-2 sm:mt-0">
+        <div className="flex flex-col sm:items-end gap-1">
+          <StatusBadge status={status} />
+          <span className="text-[11px] font-medium text-muted-foreground">{meta}</span>
+        </div>
+        <Button 
+          variant={isPaid ? "secondary" : "default"} 
+          className="shrink-0 rounded-full h-9 px-5 text-xs font-bold"
+          onClick={onClick}
+        >
+          {isPaid ? "Review" : "Audit"}
+        </Button>
       </div>
-    </div>
-  );
-}
-
-function TeacherAuditCards({ rows, onAudit }) {
-  return (
-    <div className="grid gap-3 md:hidden">
-      {rows.map((row) => (
-        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground">{row.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{row.id} - {row.faculty}</p>
-            </div>
-            <StatusBadge status={row.status} />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Salary</p>
-              <p className="mt-1 font-semibold text-foreground">{formatCurrency(row.salary)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Month</p>
-              <p className="mt-1 font-semibold text-foreground">{row.month}</p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            className="mt-4 w-full gap-2"
-            variant={row.status === "Paid" ? "outline" : "default"}
-            onClick={() => onAudit(row)}
-          >
-            <ClipboardCheck className="size-4" />
-            {row.status === "Paid" ? "Review payment" : "Audit payment"}
-          </Button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function StudentAuditCards({ rows, onAudit }) {
-  return (
-    <div className="grid gap-3 md:hidden">
-      {rows.map((row) => (
-        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground">{row.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{row.id} - Grade {row.grade}</p>
-            </div>
-            <StatusBadge status={row.status} />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Fee / month</p>
-              <p className="mt-1 font-semibold text-foreground">{formatCurrency(row.fee)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Months</p>
-              <p className="mt-1 font-semibold text-foreground">{row.months.join(", ")}</p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            className="mt-4 w-full gap-2"
-            variant={row.status === "Paid" ? "outline" : "default"}
-            onClick={() => onAudit(row)}
-          >
-            <CreditCard className="size-4" />
-            {row.status === "Paid" ? "Review receipt" : "Audit receipt"}
-          </Button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LedgerCards({ rows }) {
-  return (
-    <div className="grid gap-3 md:hidden">
-      {rows.map((row) => (
-        <div key={row.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-semibold text-foreground">{row.category}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{row.date} - {row.month}</p>
-            </div>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${row.type === "Income" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"}`}>
-              {row.type}
-            </span>
-          </div>
-          <div className="mt-4 grid gap-2 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Amount</span>
-              <span className="font-semibold text-foreground">{formatCurrency(row.amount)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Payment</span>
-              <span className="font-medium text-foreground">{row.paymentMode}</span>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <span className="text-muted-foreground">Reference</span>
-              <span className="text-right font-medium text-foreground">{row.paymentRef}</span>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
 
 export default function FinanceAuditPage() {
-  const [activeTab, setActiveTab] = useState("teachers");
+  const [activeView, setActiveView] = useState("teachers");
+  
   const [teacherRows, setTeacherRows] = useState(TEACHER_ROWS);
   const [studentRows, setStudentRows] = useState(STUDENT_ROWS);
   const [otherRows, setOtherRows] = useState(OTHER_DEFAULT);
   const [toastMessage, setToastMessage] = useState("");
 
+  // Audit Sheet States
   const [teacherAudit, setTeacherAudit] = useState(null);
   const [teacherPaymentMode, setTeacherPaymentMode] = useState("offline");
   const [teacherTransactionId, setTeacherTransactionId] = useState("");
@@ -286,6 +167,7 @@ export default function FinanceAuditPage() {
   const [studentTransactionId, setStudentTransactionId] = useState("");
   const [studentMonths, setStudentMonths] = useState(["May 2026"]);
 
+  // Ledger States
   const [otherCategory, setOtherCategory] = useState("Hostel");
   const [customName, setCustomName] = useState("");
   const [otherType, setOtherType] = useState("Income");
@@ -294,45 +176,13 @@ export default function FinanceAuditPage() {
   const [otherTransactionId, setOtherTransactionId] = useState("");
   const [otherDate, setOtherDate] = useState("2026-05-24");
   const [otherMonth, setOtherMonth] = useState("May 2026");
-
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+
   const formattedOtherDate = useMemo(() => {
     const parsed = new Date(`${otherDate}T00:00:00`);
     if (Number.isNaN(parsed.getTime())) return "Select date";
     return format(parsed, "PPP");
   }, [otherDate]);
-
-  // ── Sliding indicator refs & state ──
-  const tabsListRef = useRef(null);
-  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, height: 0, left: 0, top: 0 });
-
-  const updateIndicator = useCallback(() => {
-    const list = tabsListRef.current;
-    if (!list) return;
-
-    // Walk the DOM to find the actual rendered element with position: relative
-    // base-ui may wrap our element, so search broadly
-    const activeEl = list.querySelector('[data-active]') || list.querySelector('[data-selected]');
-    if (!activeEl) return;
-
-    // Use offsetLeft/offsetTop which are relative to offsetParent
-    setIndicatorStyle({
-      width: activeEl.offsetWidth,
-      height: activeEl.offsetHeight,
-      left: activeEl.offsetLeft,
-      top: activeEl.offsetTop,
-    });
-  }, []);
-
-  useEffect(() => {
-    // RAF to let base-ui update the active attribute first
-    const raf = requestAnimationFrame(() => updateIndicator());
-    window.addEventListener("resize", updateIndicator);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [updateIndicator]);
 
   const showToast = (message) => {
     setToastMessage(message);
@@ -346,6 +196,7 @@ export default function FinanceAuditPage() {
     studentRows.filter((row) => row.status === "Paid").length;
   const totalQueueCount = teacherPendingCount + studentPendingCount;
 
+  // Actions
   const openTeacherAudit = (row) => {
     setTeacherAudit(row);
     setTeacherPaymentMode("offline");
@@ -358,7 +209,6 @@ export default function FinanceAuditPage() {
       showToast("Add a transaction ID for online teacher payments.");
       return;
     }
-
     setTeacherRows((prev) =>
       prev.map((row) =>
         row.id === teacherAudit.id
@@ -372,7 +222,6 @@ export default function FinanceAuditPage() {
           : row
       )
     );
-
     showToast(`Teacher salary audited for ${teacherAudit.name}.`);
     setTeacherAudit(null);
   };
@@ -395,12 +244,10 @@ export default function FinanceAuditPage() {
       showToast("Select at least one month for the student payment audit.");
       return;
     }
-
     if (studentPaymentMode === "online" && !studentTransactionId.trim()) {
       showToast("Add a transaction ID for online student payments.");
       return;
     }
-
     setStudentRows((prev) =>
       prev.map((row) =>
         row.id === studentAudit.id
@@ -414,7 +261,6 @@ export default function FinanceAuditPage() {
           : row
       )
     );
-
     showToast(`Student fee audited for ${studentAudit.name}.`);
     setStudentAudit(null);
   };
@@ -427,12 +273,10 @@ export default function FinanceAuditPage() {
       showToast("Add a custom name when category is custom.");
       return;
     }
-
     if (!amount || amount <= 0) {
       showToast("Enter a valid amount for the ledger entry.");
       return;
     }
-
     if (otherMode === "online" && !otherTransactionId.trim()) {
       showToast("Add a transaction ID for online ledger entries.");
       return;
@@ -465,402 +309,334 @@ export default function FinanceAuditPage() {
 
   return (
     <FinanceShell title="Finance Audit">
-      {toastMessage ? (
-        <div className="fixed right-4 top-20 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl animate-in slide-in-from-top-2 sm:right-6">
+      {toastMessage && (
+        <div className="fixed right-4 top-20 z-50 flex items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl animate-in slide-in-from-top-2 sm:right-6">
           <Check className="size-5 shrink-0 text-emerald-400" />
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
-      ) : null}
+      )}
 
       <PageHeader
-        title="Finance Audit"
-        subtitle="Keep the audit queue moving: verify pending payroll, reconcile student receipts, and log supporting ledger entries."
+        title="Audit Queue"
+        subtitle="Master interface for clearing pending payroll, processing receipts, and logging supporting entries."
       />
 
-      <div className="-mx-1 overflow-x-auto pb-1">
-        <div className="flex min-w-max flex-nowrap gap-2 px-1 sm:gap-3">
-          <SummaryMetric
-            label="Pending payroll"
-            value={teacherPendingCount}
-            hint={`${teacherRows.length} teacher records in this cycle`}
-            tone="blue"
-          />
-          <SummaryMetric
-            label="Pending receipts"
-            value={studentPendingCount}
-            hint={`${studentRows.length} student receipts in this cycle`}
-            tone="emerald"
-          />
-          <SummaryMetric
-            label="Audits completed"
-            value={completedCount}
-            hint={totalQueueCount > 0 ? `${totalQueueCount} items still need review` : "Queue is clear"}
-            tone="amber"
-          />
-        </div>
+      {/* Floating Stats Bar */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <FloatingStat icon={Clock} label="Pending Payroll" value={teacherPendingCount} tone="blue" />
+        <FloatingStat icon={ListTodo} label="Pending Receipts" value={studentPendingCount} tone="amber" />
+        <FloatingStat icon={CheckCircle2} label="Audits Completed" value={completedCount} tone="emerald" />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList ref={tabsListRef} className="relative inline-flex h-auto w-full flex-col gap-1 rounded-[20px] bg-muted/30 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:bg-black/20 sm:h-11 sm:w-fit sm:flex-row">
-          {/* Sliding indicator */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute z-0 rounded-[14px] bg-primary shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
-            style={{
-              width: indicatorStyle.width,
-              height: indicatorStyle.height,
-              left: indicatorStyle.left,
-              top: indicatorStyle.top,
-              opacity: indicatorStyle.width ? 1 : 0,
-            }}
-          />
-
-          <TabsTrigger
-            value="teachers"
-            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
+      <div className="grid gap-6 lg:grid-cols-[220px_1fr] xl:grid-cols-[260px_1fr] items-start mt-4">
+        {/* Modern Sidebar Nav */}
+        <nav className="flex lg:flex-col gap-1.5 overflow-x-auto pb-2 lg:pb-0 lg:sticky lg:top-20 scrollbar-hide">
+          <p className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-2">Audit Views</p>
+          
+          <button
+            onClick={() => setActiveView("teachers")}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all shrink-0",
+              activeView === "teachers" 
+                ? "bg-primary text-primary-foreground shadow-md" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
           >
-            <UserCheck className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
-            Teacher Audit
+            <UserCheck className="size-4.5" />
+            Teacher Payroll
             {teacherPendingCount > 0 && (
-              <span className="ml-1 flex h-4 min-w-[18px] items-center justify-center rounded-full bg-white/20 px-1.5 text-[9px] font-extrabold transition-colors group-data-active:bg-white/25 group-data-active:text-primary-foreground">
+              <span className={cn(
+                "ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black",
+                activeView === "teachers" ? "bg-black/20 text-white" : "bg-primary/10 text-primary"
+              )}
+              >
                 {teacherPendingCount}
               </span>
             )}
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="students"
-            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
+          </button>
+          
+          <button
+            onClick={() => setActiveView("students")}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all shrink-0",
+              activeView === "students" 
+                ? "bg-primary text-primary-foreground shadow-md" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
           >
-            <ShieldCheck className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
-            Student Audit
+            <ShieldCheck className="size-4.5" />
+            Student Receipts
             {studentPendingCount > 0 && (
-              <span className="ml-1 flex h-4 min-w-[18px] items-center justify-center rounded-full bg-white/20 px-1.5 text-[9px] font-extrabold transition-colors group-data-active:bg-white/25 group-data-active:text-primary-foreground">
+              <span className={cn(
+                "ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black",
+                activeView === "students" ? "bg-black/20 text-white" : "bg-primary/10 text-primary"
+              )}
+              >
                 {studentPendingCount}
               </span>
             )}
-          </TabsTrigger>
+          </button>
 
-          <TabsTrigger
-            value="other"
-            className="group relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-[14px] border-none! bg-transparent! px-5 py-1.5 text-[13px] font-bold tracking-wide text-muted-foreground shadow-none! transition-colors duration-300 hover:text-foreground data-active:text-primary-foreground! sm:h-full sm:w-auto"
+          <button
+            onClick={() => setActiveView("ledger")}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all shrink-0",
+              activeView === "ledger" 
+                ? "bg-primary text-primary-foreground shadow-md" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
           >
-            <CircleDollarSign className="size-[16px] opacity-70 transition-opacity group-data-active:opacity-100" />
-            Ledger
-          </TabsTrigger>
-        </TabsList>
+            <CircleDollarSign className="size-4.5" />
+            Ledger Entries
+          </button>
+        </nav>
 
-        <TabsContent value="teachers">
-          <Card className="overflow-hidden">
-            <QueueHeader
-              icon={UserCheck}
-              title="Teacher salary audit"
-              description="Mark payroll items as verified, record the payment mode, and store the payment reference."
-              countLabel={`${teacherPendingCount} pending / ${teacherRows.length} total`}
-            />
-            <CardContent className="p-4 sm:p-6">
-              <TeacherAuditCards rows={teacherRows} onAudit={openTeacherAudit} />
-
-              <div className="hidden overflow-x-auto md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {["Teacher", "Faculty ID", "Faculty", "Salary", "Month", "Status", "Action"].map((heading) => (
-                        <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                          {heading}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teacherRows.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-muted/40">
-                        <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
-                        <TableCell>
-                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{row.faculty}</TableCell>
-                        <TableCell className="font-semibold text-foreground">{formatCurrency(row.salary)}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.month}</TableCell>
-                        <TableCell><StatusBadge status={row.status} /></TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            className="gap-2"
-                            variant={row.status === "Paid" ? "outline" : "default"}
-                            onClick={() => openTeacherAudit(row)}
-                          >
-                            <ClipboardCheck className="size-4" />
-                            {row.status === "Paid" ? "Review" : "Audit"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        {/* Content Area */}
+        <div className="min-w-0">
+          {activeView === "teachers" && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between px-1 mb-6">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Teacher Payroll Queue</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Review and process faculty salaries for the current cycle.</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="students">
-          <Card className="overflow-hidden">
-            <QueueHeader
-              icon={ShieldCheck}
-              title="Student fee audit"
-              description="Reconcile monthly fee receipts, confirm covered months, and attach the payment proof."
-              countLabel={`${studentPendingCount} pending / ${studentRows.length} total`}
-            />
-            <CardContent className="p-4 sm:p-6">
-              <StudentAuditCards rows={studentRows} onAudit={openStudentAudit} />
-
-              <div className="hidden overflow-x-auto md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {["Student", "Student ID", "Grade", "Fee / Month", "Months", "Status", "Action"].map((heading) => (
-                        <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                          {heading}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {studentRows.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-muted/40">
-                        <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
-                        <TableCell>
-                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{row.id}</code>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{row.grade}</TableCell>
-                        <TableCell className="font-semibold text-foreground">{formatCurrency(row.fee)}</TableCell>
-                        <TableCell className="text-muted-foreground">{row.months.join(", ")}</TableCell>
-                        <TableCell><StatusBadge status={row.status} /></TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            className="gap-2"
-                            variant={row.status === "Paid" ? "outline" : "default"}
-                            onClick={() => openStudentAudit(row)}
-                          >
-                            <CreditCard className="size-4" />
-                            {row.status === "Paid" ? "Review" : "Audit"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="flex flex-col gap-3">
+                {teacherRows.map((row) => (
+                  <QueueListRow
+                    key={row.id}
+                    title={row.name}
+                    subtitle={`${row.id} • ${row.faculty}`}
+                    icon={ClipboardCheck}
+                    amount={row.salary}
+                    meta={`Cycle: ${row.month}`}
+                    status={row.status}
+                    onClick={() => openTeacherAudit(row)}
+                  />
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          )}
 
-        <TabsContent value="other">
-          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Ledger entry</CardTitle>
-                <CardDescription>
-                  Add audit-supporting income or expense records without distracting from the main queue.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label>Category</Label>
-                  <Select value={otherCategory} onValueChange={setOtherCategory}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {OTHER_CATEGORY_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          {activeView === "students" && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between px-1 mb-6">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Student Receipts Queue</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Verify incoming fee payments and allocate to correct months.</p>
                 </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                {studentRows.map((row) => (
+                  <QueueListRow
+                    key={row.id}
+                    title={row.name}
+                    subtitle={`${row.id} • Grade ${row.grade}`}
+                    icon={CreditCard}
+                    amount={row.fee}
+                    meta={`Covered: ${row.months.length} mo`}
+                    status={row.status}
+                    onClick={() => openStudentAudit(row)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
-                {otherCategory === "Custom" ? (
-                  <div className="space-y-1.5">
-                    <Label>Custom name</Label>
-                    <Input
-                      value={customName}
-                      onChange={(e) => setCustomName(e.target.value)}
-                      placeholder="Enter custom ledger name"
-                    />
-                  </div>
-                ) : null}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label>Type</Label>
-                    <Select value={otherType} onValueChange={setOtherType}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Income">Income</SelectItem>
-                        <SelectItem value="Expense">Expense</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Amount</Label>
-                    <Input
-                      type="number"
-                      value={otherAmount}
-                      onChange={(e) => setOtherAmount(e.target.value)}
-                      placeholder="Enter amount"
-                    />
-                  </div>
+          {activeView === "ledger" && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between px-1 mb-6">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">Supporting Ledger</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Record one-off incomes or expenses tied to audits.</p>
                 </div>
+              </div>
+              
+              <div className="grid gap-6 xl:grid-cols-[400px_1fr] items-start">
+                <div className="rounded-3xl border bg-card p-6 shadow-sm">
+                  <h4 className="font-bold text-lg mb-6">New Entry</h4>
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Category</Label>
+                      <Select value={otherCategory} onValueChange={setOtherCategory}>
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {OTHER_CATEGORY_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label>Payment mode</Label>
-                    <Select value={otherMode} onValueChange={setOtherMode}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="offline">Offline</SelectItem>
-                        <SelectItem value="online">Online</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Month</Label>
-                    <Select value={otherMonth} onValueChange={setOtherMonth}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {MONTH_OPTIONS.map((month) => (
-                          <SelectItem key={month} value={month}>{month}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                    {otherCategory === "Custom" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Custom Name</Label>
+                        <Input
+                          className="h-11 rounded-xl"
+                          value={customName}
+                          onChange={(e) => setCustomName(e.target.value)}
+                          placeholder="e.g. Annual Donation"
+                        />
+                      </div>
+                    )}
 
-                {otherMode === "online" ? (
-                  <div className="space-y-1.5">
-                    <Label>Transaction ID</Label>
-                    <Input
-                      value={otherTransactionId}
-                      onChange={(e) => setOtherTransactionId(e.target.value)}
-                      placeholder="Enter payment reference"
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                    Offline entries are tagged automatically as paid via cash.
-                  </div>
-                )}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Type</Label>
+                        <Select value={otherType} onValueChange={setOtherType}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Income">Income</SelectItem>
+                            <SelectItem value="Expense">Expense</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount</Label>
+                        <Input
+                          type="number"
+                          className="h-11 rounded-xl font-bold"
+                          value={otherAmount}
+                          onChange={(e) => setOtherAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-1.5 flex flex-col">
-                  <Label>Date</Label>
-                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                    <PopoverTrigger
-                      render={(triggerProps) => (
-                        <Button
-                          {...triggerProps}
-                          type="button"
-                          variant="outline"
-                          data-empty={!otherDate}
-                          className="h-10 w-full justify-between rounded-md px-3 text-left font-normal data-[empty=true]:text-muted-foreground bg-background"
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Payment Mode</Label>
+                        <Select value={otherMode} onValueChange={setOtherMode}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="offline">Cash/Cheque</SelectItem>
+                            <SelectItem value="online">Online Transfer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Month</Label>
+                        <Select value={otherMonth} onValueChange={setOtherMonth}>
+                          <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {MONTH_OPTIONS.map((month) => (
+                              <SelectItem key={month} value={month}>{month}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {otherMode === "online" ? (
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Reference ID</Label>
+                        <Input
+                          className="h-11 rounded-xl"
+                          value={otherTransactionId}
+                          onChange={(e) => setOtherTransactionId(e.target.value)}
+                          placeholder="TXN-..."
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-amber-200/50 bg-amber-50/50 px-4 py-3 text-xs font-semibold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-400">
+                        Cash entries will be logged without a digital reference.
+                      </div>
+                    )}
+
+                    <div className="space-y-2 flex flex-col">
+                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date</Label>
+                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                        <PopoverTrigger
+                          render={
+                            <Button
+                              variant="outline"
+                              className="h-11 w-full justify-between rounded-xl px-3 font-normal bg-background"
+                            />
+                          }
                         >
-                          {otherDate ? <span>{formattedOtherDate}</span> : <span>Pick a date</span>}
-                          <ChevronDown className="size-4 text-muted-foreground opacity-50" />
-                        </Button>
-                      )}
-                    />
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarPicker
-                        mode="single"
-                        selected={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
-                        onSelect={(selectedDate) => {
-                          if (!selectedDate) return;
-                          setOtherDate(format(selectedDate, "yyyy-MM-dd"));
-                          setDatePickerOpen(false);
-                        }}
-                        defaultMonth={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
-                        captionLayout="dropdown"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                          {otherDate ? <span className="font-semibold">{formattedOtherDate}</span> : <span className="text-muted-foreground">Select</span>}
+                          <ChevronDown className="size-4 opacity-50" />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                          <CalendarPicker
+                            mode="single"
+                            selected={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
+                            onSelect={(date) => {
+                              if (date) setOtherDate(format(date, "yyyy-MM-dd"));
+                              setDatePickerOpen(false);
+                            }}
+                            defaultMonth={otherDate ? new Date(`${otherDate}T00:00:00`) : undefined}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <Button className="w-full h-12 rounded-xl text-sm font-bold gap-2 mt-2" onClick={submitOtherEntry}>
+                      <CircleDollarSign className="size-5" />
+                      Add to Ledger
+                    </Button>
+                  </div>
                 </div>
 
-                <Button className="w-full gap-2" onClick={submitOtherEntry}>
-                  <CircleDollarSign className="size-4" />
-                  Record entry
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-base">Recent ledger entries</CardTitle>
-                <CardDescription>
-                  Supporting entries stay visible here for quick audit reference.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <LedgerCards rows={otherRows} />
-
-                <div className="hidden overflow-x-auto md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {["Category", "Type", "Amount", "Payment", "Reference", "Date", "Month"].map((heading) => (
-                          <TableHead key={heading} className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
-                            {heading}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {otherRows.map((row) => (
-                        <TableRow key={row.id} className="hover:bg-muted/40">
-                          <TableCell className="font-semibold text-foreground">{row.category}</TableCell>
-                          <TableCell>
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${row.type === "Income" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"}`}>
-                              {row.type}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-semibold text-foreground">{formatCurrency(row.amount)}</TableCell>
-                          <TableCell className="text-muted-foreground">{row.paymentMode}</TableCell>
-                          <TableCell className="text-muted-foreground">{row.paymentRef}</TableCell>
-                          <TableCell className="text-muted-foreground">{row.date}</TableCell>
-                          <TableCell className="text-muted-foreground">{row.month}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={!!teacherAudit} onOpenChange={(open) => !open && setTeacherAudit(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Audit teacher payment</DialogTitle>
-            <DialogDescription>
-              Mark the selected salary as verified and attach the correct audit trail.
-            </DialogDescription>
-          </DialogHeader>
-          {teacherAudit ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 rounded-xl bg-muted/50 p-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Teacher</p>
-                  <p className="mt-1 font-semibold text-foreground">{teacherAudit.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Salary</p>
-                  <p className="mt-1 font-bold text-foreground">{formatCurrency(teacherAudit.salary)}</p>
+                <div className="space-y-3">
+                  <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground px-2 mb-2">Recent Entries</h4>
+                  {otherRows.map((row) => (
+                    <div key={row.id} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/40 items-start sm:items-center justify-between transition-colors hover:bg-muted/50">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("size-2 shrink-0 rounded-full", row.type === "Income" ? "bg-emerald-500" : "bg-rose-500")} />
+                          <p className="font-bold text-foreground truncate">{row.category}</p>
+                        </div>
+                        <p className="text-xs font-medium text-muted-foreground mt-1">{row.date} • {row.paymentMode}</p>
+                      </div>
+                      <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-3 sm:pt-0 mt-2 sm:mt-0">
+                        <div className="text-left sm:text-right">
+                          <p className="font-black text-foreground">{formatCurrency(row.amount)}</p>
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">{row.paymentRef}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Payment month</Label>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Teacher Audit Sheet */}
+      <Sheet open={!!teacherAudit} onOpenChange={(open) => !open && setTeacherAudit(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l shadow-2xl">
+          <div className="px-6 py-5 border-b bg-muted/30 backdrop-blur-md">
+            <SheetTitle className="text-xl font-bold">Process Payroll</SheetTitle>
+            <SheetDescription className="mt-1">
+              Verify salary disbursement details.
+            </SheetDescription>
+          </div>
+          
+          {teacherAudit && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="rounded-2xl bg-primary/5 border border-primary/10 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex size-10 rounded-full bg-primary/20 text-primary items-center justify-center">
+                    <UserCheck className="size-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg leading-tight">{teacherAudit.name}</p>
+                    <p className="text-xs font-semibold text-muted-foreground mt-0.5">{teacherAudit.faculty} • {teacherAudit.id}</p>
+                  </div>
+                </div>
+                <div className="flex items-end justify-between border-t border-primary/10 pt-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Salary</p>
+                  <p className="text-2xl font-black text-primary">{formatCurrency(teacherAudit.salary)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Cycle Month</Label>
                   <Select value={teacherMonth} onValueChange={setTeacherMonth}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {MONTH_OPTIONS.map((month) => (
                         <SelectItem key={month} value={month}>{month}</SelectItem>
@@ -868,118 +644,121 @@ export default function FinanceAuditPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Payment mode</Label>
+
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Mode of Payment</Label>
                   <Select value={teacherPaymentMode} onValueChange={setTeacherPaymentMode}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="offline">Offline</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="offline">Cash / Cheque</SelectItem>
+                      <SelectItem value="online">Bank Transfer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {teacherPaymentMode === "online" ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Transaction Ref</Label>
+                    <Input
+                      className="h-12 rounded-xl bg-muted/30 border-border/50"
+                      value={teacherTransactionId}
+                      onChange={(e) => setTeacherTransactionId(e.target.value)}
+                      placeholder="e.g. UTR-123456"
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-amber-200/50 bg-amber-50/50 px-4 py-3 text-sm font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-400">
+                    Offline payments are logged as paid in cash.
+                  </div>
+                )}
               </div>
-              {teacherPaymentMode === "online" ? (
-                <div className="space-y-1.5">
-                  <Label>Transaction ID</Label>
-                  <Input
-                    value={teacherTransactionId}
-                    onChange={(e) => setTeacherTransactionId(e.target.value)}
-                    placeholder="Enter online transaction ID"
-                  />
-                </div>
-              ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                  Offline teacher payments will be recorded as paid via cash.
-                </div>
-              )}
             </div>
-          ) : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTeacherAudit(null)}>Cancel</Button>
-            <Button className="gap-2" onClick={submitTeacherAudit}>
-              <Check className="size-4" />
-              Mark paid
+          )}
+
+          <div className="p-4 border-t bg-background mt-auto">
+            <Button className="w-full h-12 rounded-xl text-[15px] font-bold" onClick={submitTeacherAudit}>
+              Confirm & Mark Paid
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={!!studentAudit} onOpenChange={(open) => !open && setStudentAudit(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Audit student payment</DialogTitle>
-            <DialogDescription>
-              Confirm covered months, verify the payment mode, and store proof for the receipt.
-            </DialogDescription>
-          </DialogHeader>
-          {studentAudit ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 rounded-xl bg-muted/50 p-4 sm:grid-cols-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Student</p>
-                  <p className="mt-1 font-semibold text-foreground">{studentAudit.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">ID</p>
-                  <p className="mt-1 font-semibold text-foreground">{studentAudit.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Fee / Month</p>
-                  <p className="mt-1 font-bold text-foreground">{formatCurrency(studentAudit.fee)}</p>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Select month(s)</Label>
-                <MonthPills selectedMonths={studentMonths} onToggle={toggleStudentMonth} />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Payment mode</Label>
-                  <Select value={studentPaymentMode} onValueChange={setStudentPaymentMode}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="offline">Offline</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Total selected value</Label>
-                  <div className="rounded-xl border bg-muted/40 px-4 py-2.5 text-sm font-bold text-foreground">
-                    {formatCurrency(studentAudit.fee * studentMonths.length)}
+      {/* Student Audit Sheet */}
+      <Sheet open={!!studentAudit} onOpenChange={(open) => !open && setStudentAudit(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l shadow-2xl">
+          <div className="px-6 py-5 border-b bg-muted/30 backdrop-blur-md">
+            <SheetTitle className="text-xl font-bold">Process Receipt</SheetTitle>
+            <SheetDescription className="mt-1">
+              Verify student fee payment and coverage.
+            </SheetDescription>
+          </div>
+          
+          {studentAudit && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="rounded-2xl bg-emerald-500/5 border border-emerald-500/10 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex size-10 rounded-full bg-emerald-500/20 text-emerald-600 items-center justify-center dark:text-emerald-400">
+                    <ShieldCheck className="size-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg leading-tight text-foreground">{studentAudit.name}</p>
+                    <p className="text-xs font-semibold text-muted-foreground mt-0.5">Grade {studentAudit.grade} • {studentAudit.id}</p>
                   </div>
                 </div>
+                <div className="flex items-end justify-between border-t border-emerald-500/10 pt-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Base Fee / Mo</p>
+                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(studentAudit.fee)}</p>
+                </div>
               </div>
 
-              {studentPaymentMode === "online" ? (
-                <div className="space-y-1.5">
-                  <Label>Transaction ID</Label>
-                  <Input
-                    value={studentTransactionId}
-                    onChange={(e) => setStudentTransactionId(e.target.value)}
-                    placeholder="Enter online transaction ID"
-                  />
+              <div className="space-y-5">
+                <div className="space-y-3">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Select Covered Months</Label>
+                  <MonthPills selectedMonths={studentMonths} onToggle={toggleStudentMonth} />
                 </div>
-              ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300">
-                  Offline student payments will be recorded as paid via cash.
+                
+                <div className="flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3 border border-border/50">
+                  <span className="font-semibold text-sm">Total to collect</span>
+                  <span className="text-lg font-black">{formatCurrency(studentAudit.fee * Math.max(1, studentMonths.length))}</span>
                 </div>
-              )}
+
+                <div className="space-y-2 mt-4">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Payment Mode</Label>
+                  <Select value={studentPaymentMode} onValueChange={setStudentPaymentMode}>
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offline">Cash / Cheque</SelectItem>
+                      <SelectItem value="online">Online Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {studentPaymentMode === "online" ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Transaction ID</Label>
+                    <Input
+                      className="h-12 rounded-xl bg-muted/30 border-border/50"
+                      value={studentTransactionId}
+                      onChange={(e) => setStudentTransactionId(e.target.value)}
+                      placeholder="e.g. TXN-123456"
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-amber-200/50 bg-amber-50/50 px-4 py-3 text-sm font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-400">
+                    Offline payments are logged as paid in cash.
+                  </div>
+                )}
+              </div>
             </div>
-          ) : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStudentAudit(null)}>Cancel</Button>
-            <Button className="gap-2" onClick={submitStudentAudit}>
-              <Check className="size-4" />
-              Mark paid
+          )}
+
+          <div className="p-4 border-t bg-background mt-auto">
+            <Button className="w-full h-12 rounded-xl text-[15px] font-bold" onClick={submitStudentAudit}>
+              Confirm & Mark Paid
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
     </FinanceShell>
   );
 }
-

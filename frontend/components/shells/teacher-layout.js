@@ -62,7 +62,7 @@ export default function TeacherLayout({ children }) {
   const [systemTheme, setSystemTheme] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
   );
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const navItems = getNavItems(schoolSlug);
   const mobileBottomNavItems = getMobileNavItems(schoolSlug);
 
