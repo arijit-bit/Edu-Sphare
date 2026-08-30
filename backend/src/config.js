@@ -1,4 +1,4 @@
-const required = ["DATABASE_URL", "PASSWORD_PEPPER"];
+const required = ["DATABASE_URL", "PASSWORD_PEPPER", "JWT_ACCESS_SECRET"];
 
 export function config() {
   const missing = required.filter((name) => !process.env[name]);
@@ -31,5 +31,12 @@ export function config() {
 
     // CSRF
     csrfSecret: process.env.CSRF_SECRET,   // optional in dev; required in prod
+
+    // JWT Auth
+    jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
+    jwtIssuer: process.env.JWT_ISSUER ?? "edu-sphare",
+    jwtAudience: process.env.JWT_AUDIENCE ?? "edu-sphare-clients",
+    accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN ?? "15m",
+    refreshTokenExpiresInDays: Number(process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS ?? 30),
   };
 }

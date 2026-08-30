@@ -1,21 +1,28 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from "node:crypto";
 import { promisify } from "node:util";
+import bcrypt from "bcrypt";
 
 const scrypt = promisify(scryptCallback);
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 
 export async function hashPassword(password, pepper) {
-  const salt = randomBytes(16).toString("base64url");
-  const value = await scrypt(`${password}${pepper}`, salt, 64, SCRYPT_OPTIONS);
-  return `scrypt$${salt}$${Buffer.from(value).toString("base64url")}`;
+  // Use bcrypt with a work factor of 10
+  // Note: we still append the pepper before hashing for parity with existing setup
+  return bcrypt.hash(`${password}${pepper}`, 10);
 }
 
 export async function verifyPassword(password, stored, pepper) {
-  const [algorithm, salt, encoded] = stored.split("$");
-  if (algorithm !== "scrypt" || !salt || !encoded) return false;
-  const expected = Buffer.from(encoded, "base64url");
-  const actual = Buffer.from(await scrypt(`${password}${pepper}`, salt, expected.length, SCRYPT_OPTIONS));
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
+  // Handle legacy scrypt passwords
+  if (stored.startsWith("scrypt$")) {
+    const [, salt, encoded] = stored.split("$");
+    if (!salt || !encoded) return false;
+    const expected = Buffer.from(encoded, "base64url");
+    const actual = Buffer.from(await scrypt(`${password}${pepper}`, salt, expected.length, SCRYPT_OPTIONS));
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  }
+  
+  // Verify bcrypt hash
+  return bcrypt.compare(`${password}${pepper}`, stored);
 }
 
 export function newOpaqueToken() { return randomBytes(32).toString("base64url"); }
