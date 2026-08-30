@@ -66,6 +66,7 @@ export default function TeacherLayout({ children }) {
   const mobileBottomNavItems = getMobileNavItems(schoolSlug);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     setSystemTheme(mediaQuery.matches ? "dark" : "light");

@@ -268,7 +268,7 @@ export default function StudentsPage() {
             </div>
             <h3 className="text-lg font-medium">No students found</h3>
             <p className="text-muted-foreground mt-1 max-w-sm">
-              We couldn't find any students matching your search criteria. Try adjusting your filters.
+              We couldn&apos;t find any students matching your search criteria. Try adjusting your filters.
             </p>
             <Button variant="outline" className="mt-4" onClick={() => {setSearchQuery(""); setSelectedGrade("all");}}>
               Clear Filters
