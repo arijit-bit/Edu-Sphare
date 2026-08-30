@@ -13,10 +13,13 @@ export function hasPermission(session, permission) {
   return session.roles.some((role) => PERMISSIONS[role]?.includes(permission));
 }
 
-export async function authenticate(db, { schoolSlug, login, password, remember = false, ip, userAgent }, appConfig) {
+export async function authenticate(db, { schoolSlug, login, password, remember = false, ip, userAgent, logger }, appConfig) {
   const schoolResult = await db.query("SELECT id, slug FROM schools WHERE slug = $1 AND status = 'active'", [schoolSlug]);
   const school = schoolResult.rows[0];
+  
+  if (logger) logger.info({ event: "auth_lookup_school", foundSchool: !!school });
   if (!school) return null;
+  
   return db.withTenant(school.id, async (client) => {
     const result = await client.query(
     `SELECT $1::uuid AS school_id, $2::text AS slug, u.id AS user_id, u.password_hash, u.status,
@@ -27,7 +30,13 @@ export async function authenticate(db, { schoolSlug, login, password, remember =
      GROUP BY u.id`, [school.id, school.slug, login]
     );
   const user = result.rows[0];
-  if (!user || user.status !== "active" || !(await verifyPassword(password, user.password_hash, appConfig.passwordPepper))) return null;
+  
+  if (logger) logger.info({ event: "auth_lookup_user", foundUser: !!user });
+  if (!user || user.status !== "active" || !(await verifyPassword(password, user.password_hash, appConfig.passwordPepper))) {
+    if (logger && user) logger.info({ event: "auth_password_verification", success: false });
+    return null;
+  }
+  if (logger) logger.info({ event: "auth_password_verification", success: true });
 
   // Transparently upgrade legacy scrypt passwords to bcrypt
   if (user.password_hash.startsWith("scrypt$")) {
@@ -36,7 +45,7 @@ export async function authenticate(db, { schoolSlug, login, password, remember =
   }
 
   const token = newOpaqueToken();
-  const ttlDays = appConfig.refreshTokenExpiresInDays || 30;
+  const ttlDays = remember ? (appConfig.refreshTokenExpiresInDays || 30) : 1;
   const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
   
   // Issue a new refresh token family
@@ -45,6 +54,8 @@ export async function authenticate(db, { schoolSlug, login, password, remember =
      VALUES ($1, $2, $3, $4, $5, $6, gen_random_uuid()) RETURNING id, family_id`,
     [user.user_id, user.school_id, tokenHash(token), expiresAt, ip, userAgent]
   );
+  
+  if (logger) logger.info({ event: "auth_success", sessionCreated: true, remember, ttlDays });
   
   return { 
     refreshToken: `${school.id}.${session.rows[0].id}.${token}`, 

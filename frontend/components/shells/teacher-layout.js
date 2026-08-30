@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { logout } from "@/lib/api";
 
 const TeacherLayoutContext = createContext({
   mobileOpen: false,
@@ -174,6 +175,8 @@ export default function TeacherLayout({ children }) {
           <Button
             variant="ghost"
             size="icon"
+            onClick={logout}
+            aria-label="Logout"
             className={cn(
               "size-8 rounded-lg",
               isDark ? "text-neutral-400 hover:bg-neutral-900 hover:text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"

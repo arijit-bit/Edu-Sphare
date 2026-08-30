@@ -96,6 +96,7 @@ export async function apiFetch(path, options = {}) {
 
   // Handle Access Token Expiration — seamless refresh interceptor
   if (response.status === 401 && !path.startsWith("/v1/auth/login") && !path.startsWith("/v1/auth/refresh")) {
+    if (process.env.NODE_ENV !== "production") console.info(`[API] 401 on ${path}, attempting token refresh...`);
     if (!_refreshPromise) {
       _refreshPromise = fetch(`${API_BASE}/v1/auth/refresh`, {
         method: "POST",
@@ -107,6 +108,7 @@ export async function apiFetch(path, options = {}) {
 
     const refreshResponse = await _refreshPromise;
     if (refreshResponse.ok) {
+      if (process.env.NODE_ENV !== "production") console.info(`[API] Token refresh successful, retrying original request to ${path}`);
       // Refresh succeeded, retry original request
       const retryAfterRefresh = await fetch(`${API_BASE}${path}`, {
         ...options,
@@ -124,6 +126,8 @@ export async function apiFetch(path, options = {}) {
         );
       }
       return retryPayload.data ?? retryPayload;
+    } else {
+      if (process.env.NODE_ENV !== "production") console.warn(`[API] Token refresh failed for ${path}, dropping to login`);
     }
     // If refresh failed, fall through to throwing the 401 below
   }
@@ -150,4 +154,18 @@ function safeErrorMessage(status, code) {
   if (status === 422) return "The submitted data is invalid. Please check your input.";
   if (status === 429) return "Too many requests. Please wait a moment and try again.";
   return "An unexpected error occurred. Please try again.";
+}
+
+/**
+ * Perform a logout request and redirect to the login page.
+ */
+export async function logout() {
+  try {
+    await apiFetch("/v1/auth/logout", { method: "POST" });
+  } catch (e) {
+    // Ignore error, we still want to redirect
+  }
+  if (typeof window !== "undefined") {
+    window.location.href = "/auth/login";
+  }
 }

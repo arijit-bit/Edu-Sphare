@@ -9,8 +9,17 @@ export function proxy(request) {
   const isProtectedRoute = pathname.match(/^\/[^\/]+\/(student|teacher|finance|admin)(\/.*)?$/);
 
   if (isProtectedRoute) {
-    const cookie = request.cookies.get(process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "edu_sphare_session");
-    if (!cookie?.value) {
+    // Check for either access_token or refresh_token (lightweight check, authoritative check is done by backend)
+    const hasAccessToken = !!request.cookies.get("access_token")?.value;
+    const hasRefreshToken = !!request.cookies.get("refresh_token")?.value;
+    const hasAnyToken = hasAccessToken || hasRefreshToken;
+
+    // Safe diagnostic log in development
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[Proxy] Protected route access attempted: ${pathname}`, { hasAccessToken, hasRefreshToken, allowed: hasAnyToken });
+    }
+
+    if (!hasAnyToken) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
