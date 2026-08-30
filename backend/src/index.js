@@ -213,6 +213,7 @@ app.post("/v1/auth/login", {
     data: {
       schoolSlug: session.school.slug,
       userId: session.user.id,
+      roles: session.user.roles,
     },
   });
 });
