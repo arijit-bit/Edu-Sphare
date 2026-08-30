@@ -86,6 +86,10 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[Auth Flow] Login submitted", { schoolSlug: slug, hasEmail: !!loginEmail, hasPassword: !!loginPassword, remember: loginRemember });
+    }
+
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
@@ -96,9 +100,11 @@ export default function LoginPage() {
         if (csrfRes.ok) {
           const csrfData = await csrfRes.json();
           csrfToken = csrfData.csrfToken ?? "";
+          if (process.env.NODE_ENV !== "production") console.info("[Auth Flow] CSRF token fetched successfully");
         }
       } catch {
         // CSRF endpoint unreachable
+        if (process.env.NODE_ENV !== "production") console.warn("[Auth Flow] Failed to fetch CSRF token");
       }
 
       // Submit credentials
@@ -116,6 +122,10 @@ export default function LoginPage() {
           remember: loginRemember,
         }),
       });
+
+      if (process.env.NODE_ENV !== "production") {
+        console.info(`[Auth Flow] Login response received: ${response.status}`);
+      }
 
       const payload = await response.json();
 
@@ -138,6 +148,11 @@ export default function LoginPage() {
 
       // If there is a ?next= redirect param, honour it; otherwise go to the role dashboard
       const next = searchParams.get("next");
+      
+      if (process.env.NODE_ENV !== "production") {
+        console.info(`[Auth Flow] Login successful. Redirecting...`, { nextUrl: next, defaultRole: role });
+      }
+      
       if (next && next.startsWith("/")) {
         router.push(next);
       } else {

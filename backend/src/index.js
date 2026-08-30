@@ -169,7 +169,7 @@ app.post("/v1/auth/login", {
   // ③ Attempt authentication
   const session = await authenticate(
     app.db,
-    { schoolSlug, login, password, remember, ip, userAgent: request.headers["user-agent"] },
+    { schoolSlug, login, password, remember, ip, userAgent: request.headers["user-agent"], logger: request.log },
     appConfig,
   );
 
