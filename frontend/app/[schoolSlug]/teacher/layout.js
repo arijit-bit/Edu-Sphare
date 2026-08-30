@@ -36,11 +36,11 @@ function getNavItems(schoolSlug) {
   return [
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
     { label: "Attendance", href: `${base}/attendance`, icon: UserCheck },
-    { label: "Timetable", href: "#", icon: Calendar },
-    { label: "Students", href: "#", icon: Users },
+    { label: "Timetable", href: `${base}/timetable`, icon: Calendar },
+    { label: "Students", href: `${base}/students`, icon: Users },
     { label: "Marks Audit", href: `${base}/marksAudit`, icon: FileText },
     { label: "Salary", href: `${base}/salary`, icon: Wallet },
-    { label: "Messages", href: "#", icon: MessageSquare },
+    { label: "Messages", href: `${base}/messages`, icon: MessageSquare },
     { label: "Settings", href: "#", icon: Settings },
   ];
 }
@@ -51,7 +51,7 @@ function getMobileNavItems(schoolSlug) {
     { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
     { label: "Attendance", href: `${base}/attendance`, icon: UserCheck },
     { label: "Salary", href: `${base}/salary`, icon: Wallet },
-    { label: "Students", href: "#", icon: Users },
+    { label: "Students", href: `${base}/students`, icon: Users },
   ];
 }
 
@@ -59,17 +59,19 @@ export default function TeacherLayout({ children }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme } = useTheme();
-  const [systemTheme, setSystemTheme] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-  );
+  const [systemTheme, setSystemTheme] = useState("light");
+  const [mounted, setMounted] = useState(false);
   const { schoolSlug = "demo-school" } = useParams() || {};
   const navItems = getNavItems(schoolSlug);
   const mobileBottomNavItems = getMobileNavItems(schoolSlug);
 
   useEffect(() => {
+    setMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemTheme(mediaQuery.matches ? "dark" : "light");
+
     if (theme !== "system") return;
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const applyTheme = () => setSystemTheme(mediaQuery.matches ? "dark" : "light");
 
     if (mediaQuery.addEventListener) {
@@ -81,7 +83,7 @@ export default function TeacherLayout({ children }) {
     return () => mediaQuery.removeListener(applyTheme);
   }, [theme]);
 
-  const isDark = theme === "system" ? systemTheme === "dark" : theme === "dark";
+  const isDark = mounted ? (theme === "system" ? systemTheme === "dark" : theme === "dark") : false;
 
   const teacherThemeVars = useMemo(
     () => ({
