@@ -33,8 +33,6 @@ const nextConfig = {
         source: "/_next/static/:path*",
         headers: [
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
-          // Cache static assets aggressively (they have content-hash in filename)
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];

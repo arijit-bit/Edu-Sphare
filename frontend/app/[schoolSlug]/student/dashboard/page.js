@@ -201,7 +201,7 @@ const dayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 export default function CombinedStudentDashboardPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [currentDayIndex] = useState(() => new Date().getDay());
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
 
   const triggerToast = (msg) => {
     setToastMessage(msg);

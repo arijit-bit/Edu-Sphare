@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 export function proxy(request) {
@@ -46,6 +47,7 @@ export function proxy(request) {
   // Pass nonce to layout via header so server components can read it
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("x-csp", csp);
+  requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },

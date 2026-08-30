@@ -60,7 +60,7 @@ const recentActivity = [
 ];
 
 export default function AdminDashboard() {
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
 

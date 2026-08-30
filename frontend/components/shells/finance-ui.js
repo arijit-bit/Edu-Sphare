@@ -57,7 +57,7 @@ function NavItem({ item, isActive, onClick }) {
 
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNav }) {
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const navItems = getNavItems(schoolSlug);
   return (
     <div className="flex h-full flex-col">
@@ -109,7 +109,7 @@ export function FinanceShell({ children, title = "Finance" }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const navItems = getNavItems(schoolSlug);
 
   return (

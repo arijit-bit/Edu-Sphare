@@ -146,7 +146,7 @@ function SidebarNavItem({ item, pathname, onClick }) {
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNavClick }) {
   const { t } = useLanguage();
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const studentNavItems = getStudentNavItems(t, schoolSlug);
   const router = useRouter();
 
@@ -262,7 +262,7 @@ function SidebarContent({ pathname, onNavClick }) {
 export function useStudentNav() {
   const pathname = usePathname() || "";
   const { t } = useLanguage();
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const studentNavItems = getStudentNavItems(t, schoolSlug);
   const activeItem = studentNavItems.find(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
@@ -275,7 +275,7 @@ export function StudentShell({ children, title, subtitle }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, dateLocale } = useLanguage();
-  const { schoolSlug = "dummy-school" } = useParams() || {};
+  const { schoolSlug = "demo-school" } = useParams() || {};
   const mobileNavItems = getMobileNavItems(t, schoolSlug);
   const translatedTitle = title ? t(title) : title;
   const translatedSubtitle = subtitle ? t(subtitle) : subtitle;
