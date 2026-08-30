@@ -41,7 +41,7 @@ function getNavItems(schoolSlug) {
     { label: "Marks Audit", href: `${base}/marksAudit`, icon: FileText },
     { label: "Salary", href: `${base}/salary`, icon: Wallet },
     { label: "Messages", href: `${base}/messages`, icon: MessageSquare },
-    { label: "Settings", href: "#", icon: Settings },
+    { label: "Settings", href: `${base}/settings`, icon: Settings },
   ];
 }
 
