@@ -60,6 +60,7 @@ export default function LoginPage() {
     const demoRole = detectDemoRole(searchParams);
     if (demoRole) {
       isDemoRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSchoolSlug(DEMO_SCHOOL_SLUG);
       setEmail(DEMO_CREDS[demoRole].email);
       setPassword(DEMO_CREDS[demoRole].password);

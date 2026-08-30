@@ -53,6 +53,7 @@ const ChartContainer = React.forwardRef(({ id, className, children, config, ...p
     </ChartContext.Provider>
   );
 });
+ChartContainer.displayName = "ChartContainer";
 
 function ChartStyle({ id, config }) {
   const colorConfig = Object.entries(config).filter(([, value]) => value.color || value.theme);
