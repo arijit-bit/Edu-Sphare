@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { logout } from "@/lib/api";
 
 function getNavItems(schoolSlug) {
   const base = `/${schoolSlug}/finance`;
@@ -95,7 +96,7 @@ function SidebarContent({ pathname, onNav }) {
             <p className="text-sm font-semibold truncate">Alex Morgan</p>
             <p className="text-xs text-muted-foreground truncate">Senior Accountant</p>
           </div>
-          <Button variant="ghost" size="icon" className="size-7 shrink-0">
+          <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={logout} aria-label="Logout">
             <LogOut className="size-3.5 text-muted-foreground" />
           </Button>
         </div>

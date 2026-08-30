@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { logout } from "@/lib/api";
 
 const getNavItems = (schoolSlug) => [
   { label: "Dashboard",    href: `/${schoolSlug}/admin/dashboard`,  icon: LayoutDashboard },
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
             <p className="text-sm font-semibold truncate">Super Admin</p>
             <p className="text-xs text-muted-foreground truncate">admin@edusphare.edu</p>
           </div>
-          <Button variant="ghost" size="icon" className="size-7"><LogOut className="size-3.5 text-muted-foreground" /></Button>
+          <Button variant="ghost" size="icon" className="size-7" onClick={logout} aria-label="Logout"><LogOut className="size-3.5 text-muted-foreground" /></Button>
         </div>
       </div>
     </div>

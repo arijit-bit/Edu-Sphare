@@ -155,3 +155,17 @@ function safeErrorMessage(status, code) {
   if (status === 429) return "Too many requests. Please wait a moment and try again.";
   return "An unexpected error occurred. Please try again.";
 }
+
+/**
+ * Perform a logout request and redirect to the login page.
+ */
+export async function logout() {
+  try {
+    await apiFetch("/v1/auth/logout", { method: "POST" });
+  } catch (e) {
+    // Ignore error, we still want to redirect
+  }
+  if (typeof window !== "undefined") {
+    window.location.href = "/auth/login";
+  }
+}
