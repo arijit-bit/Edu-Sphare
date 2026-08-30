@@ -4,10 +4,11 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import csrf from "@fastify/csrf-protection";
+import fjwt from "@fastify/jwt";
 import { z } from "zod";
 import { config } from "./config.js";
 import { createDb } from "./db.js";
-import { authenticate } from "./auth.js";
+import { authenticate, rotateRefreshToken, revokeTokenFamily } from "./auth.js";
 import { requirePermission, requireSchoolParam, requireSession } from "./guards.js";
 import { isLockedOut, recordFailure, clearFailures } from "./lockout.js";
 
@@ -69,6 +70,24 @@ await app.register(cookie, {
   secret: appConfig.passwordPepper, // sign cookies with pepper (reuses existing secret)
 });
 
+// ── JWT ───────────────────────────────────────────────────────────────────────
+await app.register(fjwt, {
+  secret: appConfig.jwtAccessSecret,
+  cookie: {
+    cookieName: "access_token",
+    signed: false, // Don't sign JWT cookie with @fastify/cookie since JWT is already cryptographically signed
+  },
+  sign: {
+    issuer: appConfig.jwtIssuer,
+    audience: appConfig.jwtAudience,
+    expiresIn: appConfig.accessTokenExpiresIn,
+  },
+  verify: {
+    issuer: appConfig.jwtIssuer,
+    audience: appConfig.jwtAudience,
+  },
+});
+
 // ── Global rate limit ─────────────────────────────────────────────────────────
 // Protects all routes from DDoS / scraping. Per-route stricter limits below.
 await app.register(rateLimit, {
@@ -85,7 +104,7 @@ await app.register(csrf, {
   cookieOpts: {
     httpOnly: false,   // must be readable by JS to submit in header
     secure: isProd,
-    sameSite: "lax",
+    sameSite: isProd ? "none" : "lax",
     path: "/",
   },
   getToken: (request) => request.headers["x-csrf-token"],
@@ -167,28 +186,112 @@ app.post("/v1/auth/login", {
   clearFailures(ip, login, schoolSlug);
   request.log.info({ event: "login_success", schoolSlug, userId: session.user.id }, "Login successful");
 
-  reply.setCookie(appConfig.cookieName, session.token, {
+  // ⑥ Generate Access JWT
+  const jwtPayload = {
+    sub: session.user.id,
+    school: session.school.id,
+    slug: session.school.slug,
+  };
+  const accessToken = await reply.jwtSign(jwtPayload);
+
+  // ⑦ Set Cookies
+  const cookieOpts = {
     httpOnly: true,
     secure: isProd,
-    sameSite: "lax",
+    sameSite: isProd ? "none" : "lax",
     path: "/",
+  };
+
+  reply.setCookie("access_token", accessToken, cookieOpts);
+  reply.setCookie("refresh_token", session.refreshToken, {
+    ...cookieOpts,
     expires: session.expiresAt,
+    signed: true, // Use fastify-cookie signature for the opaque token
   });
 
   return reply.send({
     data: {
       schoolSlug: session.school.slug,
       userId: session.user.id,
-      roles: session.user.roles,
     },
   });
 });
 
+// ── Refresh Token ─────────────────────────────────────────────────────────────
+app.post("/v1/auth/refresh", async (request, reply) => {
+  const signedRefreshToken = request.cookies["refresh_token"];
+  if (!signedRefreshToken) return reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No refresh token provided." } });
+
+  const result = reply.unsignCookie(signedRefreshToken);
+  if (!result.valid || !result.value) return reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "Invalid refresh token signature." } });
+
+  const session = await app.db.getSession(result.value);
+  if (!session) return reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "Invalid or expired session." } });
+
+  // Theft / reuse detection
+  if (session.replaced_by || session.revoked_at) {
+    await revokeTokenFamily(app.db, session.school_id, session.family_id);
+    request.log.warn({ event: "token_reuse_detected", familyId: session.family_id }, "Revoked compromised token family");
+    reply.clearCookie("access_token", { path: "/" });
+    reply.clearCookie("refresh_token", { path: "/" });
+    return reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "Session compromised and revoked." } });
+  }
+
+  // Rotate refresh token
+  const newSession = await rotateRefreshToken(
+    app.db,
+    session.id,
+    session.family_id,
+    session.school_id,
+    session.user_id,
+    request.ip,
+    request.headers["user-agent"],
+    appConfig
+  );
+
+  // Generate new Access JWT
+  const jwtPayload = {
+    sub: session.user_id,
+    school: session.school_id,
+    slug: session.slug,
+  };
+  const accessToken = await reply.jwtSign(jwtPayload);
+
+  const cookieOpts = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    path: "/",
+  };
+
+  reply.setCookie("access_token", accessToken, cookieOpts);
+  reply.setCookie("refresh_token", newSession.refreshToken, {
+    ...cookieOpts,
+    expires: newSession.expiresAt,
+    signed: true,
+  });
+
+  return reply.code(200).send({ data: { refreshed: true } });
+});
+
 // ── Logout ────────────────────────────────────────────────────────────────────
-app.post("/v1/auth/logout", { preHandler: requireSession(app) }, async (request, reply) => {
-  await app.db.query("UPDATE sessions SET revoked_at = now() WHERE id = $1", [request.session.id]);
-  reply.clearCookie(appConfig.cookieName, { path: "/" });
-  request.log.info({ event: "logout", userId: request.session.user_id }, "User logged out");
+app.post("/v1/auth/logout", async (request, reply) => {
+  // If we have a refresh token, revoke its family to be safe
+  const signedRefreshToken = request.cookies["refresh_token"];
+  if (signedRefreshToken) {
+    const result = reply.unsignCookie(signedRefreshToken);
+    if (result.valid && result.value) {
+      const session = await app.db.getSession(result.value);
+      if (session) {
+        await revokeTokenFamily(app.db, session.school_id, session.family_id);
+      }
+    }
+  }
+
+  const cookieOpts = { path: "/", secure: isProd, sameSite: isProd ? "none" : "lax" };
+  reply.clearCookie("access_token", cookieOpts);
+  reply.clearCookie("refresh_token", cookieOpts);
+  
   return reply.code(204).send();
 });
 
@@ -198,9 +301,8 @@ app.get(
   { preHandler: [requireSession(app), requireSchoolParam] },
   async (request) => ({
     data: {
-      userId: request.session.user_id,
-      schoolSlug: request.session.slug,
-      roles: request.session.roles,
+      userId: request.user.sub,
+      schoolSlug: request.user.slug,
     },
   }),
 );

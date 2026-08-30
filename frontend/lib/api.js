@@ -15,6 +15,9 @@ const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 // Module-level CSRF token cache — reused across calls until invalidated
 let _csrfToken = null;
 
+// Lock to prevent multiple concurrent refresh calls
+let _refreshPromise = null;
+
 async function getCsrfToken() {
   if (_csrfToken) return _csrfToken;
   try {
@@ -90,6 +93,40 @@ export async function apiFetch(path, options = {}) {
   }
 
   const payload = await response.json().catch(() => ({}));
+
+  // Handle Access Token Expiration — seamless refresh interceptor
+  if (response.status === 401 && !path.startsWith("/v1/auth/login") && !path.startsWith("/v1/auth/refresh")) {
+    if (!_refreshPromise) {
+      _refreshPromise = fetch(`${API_BASE}/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      }).finally(() => {
+        _refreshPromise = null;
+      });
+    }
+
+    const refreshResponse = await _refreshPromise;
+    if (refreshResponse.ok) {
+      // Refresh succeeded, retry original request
+      const retryAfterRefresh = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        method,
+        credentials: "include",
+        headers,
+      });
+      
+      if (retryAfterRefresh.status === 204) return null;
+      const retryPayload = await retryAfterRefresh.json().catch(() => ({}));
+      if (!retryAfterRefresh.ok) {
+        throw Object.assign(
+          new Error(safeErrorMessage(retryAfterRefresh.status, retryPayload?.error?.code)),
+          { status: retryAfterRefresh.status, code: retryPayload?.error?.code, requestId: retryAfterRefresh.headers.get("x-request-id") }
+        );
+      }
+      return retryPayload.data ?? retryPayload;
+    }
+    // If refresh failed, fall through to throwing the 401 below
+  }
 
   if (!response.ok) {
     throw Object.assign(
