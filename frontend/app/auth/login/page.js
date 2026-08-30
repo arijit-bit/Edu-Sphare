@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, User, Lock, Check } from "lucide-react";
+import { ArrowRight, User, Lock, Check, Eye, EyeOff } from "lucide-react";
 
 // Demo credentials - only auto-filled for the demo school
 const DEMO_CREDS = {
@@ -40,6 +40,7 @@ export default function LoginPage() {
   const [email, setEmail]           = useState("");
   const [schoolSlug, setSchoolSlug] = useState(process.env.NEXT_PUBLIC_DEFAULT_SCHOOL_SLUG || "");
   const [password, setPassword]     = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember]     = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState("");
@@ -269,17 +270,25 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="space-y-1 relative group mt-6">
-                <div className={`flex items-center border-b ${error ? "border-red-300" : "border-gray-300"} group-focus-within:border-[#0066FF] transition-colors pb-2`}>
-                  <Lock className="w-4 h-4 text-gray-400 mr-3" />
+                <div className={`flex items-center border-b ${error ? "border-red-300" : "border-gray-300"} group-focus-within:border-[#0066FF] transition-colors pb-2 relative`}>
+                  <Lock className="w-4 h-4 text-gray-400 mr-3 shrink-0" />
                   <input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-base"
+                    className="w-full bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-base pr-10"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
