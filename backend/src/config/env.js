@@ -9,7 +9,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(16, 'JWT_ACCESS_SECRET must be at least 16 characters long'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-  COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+  COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).optional(),
   RATE_LIMIT_LOGIN_MAX: z.string().default('10').transform(val => parseInt(val, 10)),
   RATE_LIMIT_LOGIN_WINDOW_MS: z.string().default('60000').transform(val => parseInt(val, 10)),
 });

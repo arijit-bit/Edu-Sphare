@@ -7,15 +7,29 @@ const REFRESH_COOKIE_NAME = 'refreshToken';
 
 /**
  * Configure cookie options securely based on environment
+ * Production (cross-site: vercel.app -> render.com):
+ *   sameSite: 'none', secure: true, httpOnly: true, path: '/'
+ * Development (localhost:3000 -> localhost:4000):
+ *   sameSite: 'lax', secure: false, httpOnly: true, path: '/'
  */
 function getRefreshCookieOptions(expiresAt) {
   const isProduction = env.NODE_ENV === 'production';
   return {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? (env.COOKIE_SAME_SITE || 'lax') : 'lax',
+    sameSite: isProduction ? (env.COOKIE_SAME_SITE || 'none') : (env.COOKIE_SAME_SITE || 'lax'),
     path: '/',
     expires: expiresAt,
+  };
+}
+
+function getClearCookieOptions() {
+  const isProduction = env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? (env.COOKIE_SAME_SITE || 'none') : (env.COOKIE_SAME_SITE || 'lax'),
+    path: '/',
   };
 }
 
@@ -107,7 +121,7 @@ class AuthController {
       });
     } catch (err) {
       // Clear cookie on failure
-      res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+      res.clearCookie(REFRESH_COOKIE_NAME, getClearCookieOptions());
       return next(err);
     }
   }
@@ -123,7 +137,7 @@ class AuthController {
         await authService.logout(rawRefreshToken);
       }
 
-      res.clearCookie(REFRESH_COOKIE_NAME, { path: '/' });
+      res.clearCookie(REFRESH_COOKIE_NAME, getClearCookieOptions());
 
       return res.status(HTTP_STATUS.OK).json({
         success: true,

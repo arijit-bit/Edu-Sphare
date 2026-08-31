@@ -142,6 +142,9 @@ function LoginContent() {
 
       if (result.roleMatch || !portalParam) {
         const activeSlug = slug || "demo-school";
+        if (typeof window !== "undefined") {
+          localStorage.setItem("edusphere_school_slug", activeSlug);
+        }
         let destination = getDashboardForRole(result.user.role, activeSlug);
         if (nextParam) {
           destination = nextParam.replace(/^\/[^\/]+(\/(student|teacher|finance|admin))/, `/${activeSlug}$1`);
