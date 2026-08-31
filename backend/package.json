@@ -6,18 +6,28 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand",
+    "test:auth": "node scripts/test-auth.js",
+    "migrate": "node -e \"const fs = require('fs'); const { pool } = require('./src/config/database'); const sql = fs.readFileSync('./migrations/001_auth_schema.sql', 'utf8'); pool.query(sql).then(() => { console.log('Migration successful'); process.exit(0); }).catch((err) => { console.error(err); process.exit(1); });\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "jest": "^30.5.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }
