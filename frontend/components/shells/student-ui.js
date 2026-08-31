@@ -6,6 +6,7 @@ import { useLanguage } from "@/components/language-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { useRouter } from "next/navigation";
+import { logout } from "@/lib/api";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -152,25 +153,11 @@ function SidebarContent({ pathname, onNavClick }) {
 
   async function handleLogout() {
     try {
-      // Fetch CSRF token before the mutating logout request
-      let csrfToken = "";
-      try {
-        const csrfRes = await fetch(`/api/v1/csrf-token`, { credentials: "include" });
-        if (csrfRes.ok) {
-          const data = await csrfRes.json();
-          csrfToken = data.csrfToken ?? "";
-        }
-      } catch { /* proceed without token in dev */ }
-
-      await fetch(`/api/v1/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-      });
+      await logout();
     } catch (_) {
       // Always redirect — even if the API call fails
     }
-    router.push("/auth/login");
+    router.push("/auth/login?portal=student");
   }
 
   return (

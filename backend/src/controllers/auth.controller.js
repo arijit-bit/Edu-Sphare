@@ -14,7 +14,7 @@ function getRefreshCookieOptions(expiresAt) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? (env.COOKIE_SAME_SITE || 'lax') : 'lax',
-    path: '/api/auth', // Restricted to auth paths
+    path: '/',
     expires: expiresAt,
   };
 }
@@ -123,7 +123,7 @@ class AuthController {
         await authService.logout(rawRefreshToken);
       }
 
-      res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+      res.clearCookie(REFRESH_COOKIE_NAME, { path: '/' });
 
       return res.status(HTTP_STATUS.OK).json({
         success: true,

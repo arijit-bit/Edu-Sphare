@@ -21,6 +21,8 @@ export const metadata = {
   keywords: ["school management", "education portal", "student dashboard", "academic performance"],
 };
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default async function RootLayout({ children }) {
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") || "";
@@ -57,14 +59,16 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
-        <LanguageProvider>
-          <ThemeProvider
-            defaultTheme="system"
-            storageKey="edu-sphare-theme"
-          >
-            {children}
-          </ThemeProvider>
-        </LanguageProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <ThemeProvider
+              defaultTheme="system"
+              storageKey="edu-sphare-theme"
+            >
+              {children}
+            </ThemeProvider>
+          </LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   );

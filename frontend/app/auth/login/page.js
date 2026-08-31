@@ -1,8 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, User, Lock, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, User, Lock, Check, Eye, EyeOff, ShieldAlert, LogOut, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import {
+  PORTAL_ROLES,
+  PORTAL_LABELS,
+  ROLE_LABELS,
+  isValidPortal,
+  getRequiredRoleForPortal,
+  getDashboardForRole,
+  getPortalForRole,
+} from "@/lib/constants";
 
 // Demo credentials - only auto-filled for the demo school
 const DEMO_CREDS = {
@@ -13,37 +24,47 @@ const DEMO_CREDS = {
 };
 const DEMO_SCHOOL_SLUG = "demo-school";
 
-// Try to detect the demo role from either:
-//   ?role=student&school=demo-school  (coming from portal page)
-//   ?next=/demo-school/student/dashboard  (coming from middleware redirect)
+// Try to detect the demo role from either ?portal=, ?role=, or ?next=
 function detectDemoRole(searchParams) {
-  const school = searchParams.get("school");
-  const role   = searchParams.get("role");
+  const portal = searchParams.get("portal");
+  if (portal && DEMO_CREDS[portal.toLowerCase()]) {
+    return portal.toLowerCase();
+  }
 
-  // Direct portal flow
+  const role = searchParams.get("role");
+  if (role && DEMO_CREDS[role.toLowerCase()]) {
+    return role.toLowerCase();
+  }
+
+  const school = searchParams.get("school");
   if (school === DEMO_SCHOOL_SLUG && role && DEMO_CREDS[role]) {
     return role;
   }
 
-  // Middleware redirect flow: parse /demo-school/<role>/...
+  // Middleware / URL redirect flow: parse /<school>/<role>/...
   const next = searchParams.get("next") || "";
-  const match = next.match(/^\/demo-school\/(student|teacher|finance|admin)(\/|$)/);
+  const match = next.match(/^\/[^\/]+\/(student|teacher|finance|admin)(\/|$)/);
   if (match) return match[1];
 
   return null;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const { user, isAuthenticated, isLoading, login, logout } = useAuth();
 
-  const [email, setEmail]           = useState("");
-  const [schoolSlug, setSchoolSlug] = useState(process.env.NEXT_PUBLIC_DEFAULT_SCHOOL_SLUG || "");
-  const [password, setPassword]     = useState("");
+  const portalParam = (searchParams.get("portal") || searchParams.get("role") || "").toLowerCase();
+  const nextParam   = searchParams.get("next");
+
+  const [email, setEmail]               = useState("");
+  const [schoolSlug, setSchoolSlug]     = useState(process.env.NEXT_PUBLIC_DEFAULT_SCHOOL_SLUG || "demo-school");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember]     = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState("");
+  const [remember, setRemember]         = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError]               = useState("");
+  const [mismatchError, setMismatchError] = useState(null);
 
   // Bot protection
   const [honeypot, setHoneypot] = useState("");
@@ -55,11 +76,14 @@ export default function LoginPage() {
   const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
 
+  const activePortal = portalParam && isValidPortal(portalParam) ? portalParam : (detectDemoRole(searchParams) || "student");
+  const portalTitle = PORTAL_LABELS[activePortal] || "School Portal";
+
   useEffect(() => {
     loadTimeRef.current = Date.now();
 
     const demoRole = detectDemoRole(searchParams);
-    if (demoRole) {
+    if (demoRole && DEMO_CREDS[demoRole]) {
       isDemoRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSchoolSlug(DEMO_SCHOOL_SLUG);
@@ -68,115 +92,89 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
+  // If user is already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const requiredRole = getRequiredRoleForPortal(activePortal);
+      if (user.role === requiredRole || !portalParam) {
+        const activeSlug = schoolSlug || "demo-school";
+        let destination = getDashboardForRole(user.role, activeSlug);
+        if (nextParam) {
+          destination = nextParam.replace(/^\/[^\/]+(\/(student|teacher|finance|admin))/, `/${activeSlug}$1`);
+        }
+        router.push(destination);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMismatchError({
+          userRole: user.role,
+          attemptedPortal: activePortal,
+        });
+      }
+    }
+  }, [isLoading, isAuthenticated, user, activePortal, portalParam, nextParam, schoolSlug, router]);
+
   const submitLogin = async ({ slug, loginEmail, loginPassword, loginRemember }) => {
     setError("");
+    setMismatchError(null);
 
     // Bot detection: honeypot
     if (honeypot) {
-      setLoading(true);
+      setIsSubmitting(true);
       await new Promise((r) => setTimeout(r, 1800));
-      setLoading(false);
+      setIsSubmitting(false);
       return;
     }
+
     // Timing guard - skip for auto-filled demo sessions
     if (!isDemoRef.current && Date.now() - loadTimeRef.current < 1500) {
       setError("Please try again.");
       return;
     }
 
-    setLoading(true);
-
-    if (process.env.NODE_ENV !== "production") {
-      console.info("[Auth Flow] Login submitted", { schoolSlug: slug, hasEmail: !!loginEmail, hasPassword: !!loginPassword, remember: loginRemember });
-    }
+    setIsSubmitting(true);
 
     try {
-      // Fetch CSRF token
-      let csrfToken = "";
-      try {
-        const csrfRes = await fetch("/api/v1/csrf-token", { credentials: "include" });
-        if (csrfRes.ok) {
-          const csrfData = await csrfRes.json();
-          csrfToken = csrfData.csrfToken ?? "";
-          if (process.env.NODE_ENV !== "production") console.info("[Auth Flow] CSRF token fetched successfully");
-        }
-      } catch {
-        // CSRF endpoint unreachable
-        if (process.env.NODE_ENV !== "production") console.warn("[Auth Flow] Failed to fetch CSRF token");
-      }
-
-      // Submit credentials
-      const response = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        },
-        body: JSON.stringify({
-          schoolSlug: slug.trim(),
-          login: loginEmail,
-          password: loginPassword,
-          remember: loginRemember,
-        }),
+      const result = await login({
+        email: loginEmail,
+        password: loginPassword,
+        portal: activePortal,
       });
 
-      if (process.env.NODE_ENV !== "production") {
-        console.info(`[Auth Flow] Login response received: ${response.status}`);
-      }
-
-      const payload = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 422) {
-          throw new Error("Invalid school code, email, or password.");
-        } else if (response.status === 429) {
-          throw new Error("Too many attempts. Please wait a minute and try again.");
-        } else {
-          throw new Error("Unable to sign in. Please try again.");
+      if (result.roleMatch || !portalParam) {
+        const activeSlug = slug || "demo-school";
+        let destination = getDashboardForRole(result.user.role, activeSlug);
+        if (nextParam) {
+          destination = nextParam.replace(/^\/[^\/]+(\/(student|teacher|finance|admin))/, `/${activeSlug}$1`);
         }
-      }
-
-      // Success - clear loading state BEFORE navigation
-      setLoading(false);
-      const role = payload.data.roles.includes("admin")   ? "admin"
-        : payload.data.roles.includes("finance") ? "finance"
-        : payload.data.roles.includes("teacher") ? "teacher"
-        : "student";
-
-      // If there is a ?next= redirect param, honour it; otherwise go to the role dashboard
-      const next = searchParams.get("next");
-      
-      if (process.env.NODE_ENV !== "production") {
-        console.info(`[Auth Flow] Login successful. Redirecting...`, { nextUrl: next, defaultRole: role });
-      }
-      
-      if (next && next.startsWith("/")) {
-        router.push(next);
+        router.push(destination);
       } else {
-        router.push(`/${payload.data.schoolSlug}/${role}/dashboard`);
+        setMismatchError({
+          userRole: result.actualRole,
+          attemptedPortal: activePortal,
+        });
       }
     } catch (requestError) {
-      setLoading(false);
-      setError(requestError.message || "Unable to sign in. Please try again.");
+      setError(requestError.message || "Invalid email or password.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return;
+    if (isSubmitting) return;
     await submitLogin({ slug: schoolSlug, loginEmail: email, loginPassword: password, loginRemember: remember });
   };
 
   const handlePointerDown = (e) => {
-    if (loading) return;
+    if (isSubmitting) return;
     setIsDragging(true);
     startXRef.current = e.clientX;
     e.target.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e) => {
-    if (!isDragging || loading) return;
+    if (!isDragging || isSubmitting) return;
     const delta = e.clientX - startXRef.current;
     if (delta > 0) {
       setDragX(Math.min(delta, 152));
@@ -184,7 +182,7 @@ export default function LoginPage() {
   };
 
   const handlePointerUp = (e) => {
-    if (!isDragging || loading) return;
+    if (!isDragging || isSubmitting) return;
     setIsDragging(false);
     e.target.releasePointerCapture(e.pointerId);
     
@@ -195,6 +193,60 @@ export default function LoginPage() {
       setDragX(0);
     }
   };
+
+  // If role mismatch state is active
+  if (mismatchError) {
+    const userRoleLabel = ROLE_LABELS[mismatchError.userRole] || mismatchError.userRole;
+    const portalNameLabel = PORTAL_LABELS[mismatchError.attemptedPortal] || "Portal";
+    const authorizedDashboard = getDashboardForRole(mismatchError.userRole, schoolSlug || "demo-school");
+
+    return (
+      <div className="min-h-screen bg-[#2A2A2B] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-[32px] overflow-hidden shadow-2xl p-8 text-center animate-in fade-in zoom-in duration-300">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+            <ShieldAlert className="size-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
+          <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+            Your account does not have permission to access the <strong>{portalNameLabel}</strong>.
+          </p>
+
+          <div className="my-5 rounded-xl border border-gray-200 bg-gray-50 p-3.5 text-xs text-gray-600 text-left">
+            <p className="font-semibold text-gray-800">Current Session:</p>
+            <p className="mt-0.5">
+              Logged in as <span className="font-bold text-[#0066FF] capitalize">{userRoleLabel}</span> ({user?.email})
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Link
+              href={authorizedDashboard}
+              className="w-full h-11 bg-[#0066FF] hover:bg-blue-700 text-white font-semibold rounded-xl flex items-center justify-center transition-colors shadow-sm"
+            >
+              Go to {userRoleLabel} Dashboard <ArrowRight className="ml-2 size-4" />
+            </Link>
+
+            <button
+              type="button"
+              className="w-full h-11 border border-gray-200 text-gray-700 hover:bg-gray-100 font-semibold rounded-xl flex items-center justify-center transition-colors"
+              onClick={async () => {
+                await logout();
+                setMismatchError(null);
+              }}
+            >
+              <LogOut className="mr-2 size-4" /> Sign Out & Switch Account
+            </button>
+
+            <div className="pt-2">
+              <Link href="/" className="text-xs text-gray-500 hover:text-gray-900 font-medium inline-flex items-center gap-1">
+                <ArrowLeft className="size-3.5" /> Back to Home Portals
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#2A2A2B] flex items-center justify-center p-4">
@@ -216,14 +268,16 @@ export default function LoginPage() {
           <div className="w-full max-w-[320px] flex flex-col items-center">
 
             {/* Logo */}
-            <div className="flex flex-col items-center mb-10">
+            <div className="flex flex-col items-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <div className="w-8 h-8 rounded-md bg-[#2A2A2B] text-white flex items-center justify-center font-bold text-lg leading-none">
                   e
                 </div>
                 <h1 className="text-3xl font-bold text-[#2A2A2B] tracking-tight">edusphare</h1>
               </div>
-              <p className="text-sm text-gray-500 font-medium">Access your account</p>
+              <p className="text-sm text-gray-500 font-medium">
+                {portalParam ? `${portalTitle} Login` : "Access your account"}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="w-full space-y-6">
@@ -327,7 +381,7 @@ export default function LoginPage() {
               {/* Login Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isSubmitting}
                 className="w-[200px] mx-auto h-12 bg-[#0066FF] hover:bg-blue-700 text-white rounded-full flex items-center justify-center font-medium transition-all shadow-md mt-10 relative group overflow-hidden touch-none"
               >
                 <div
@@ -336,27 +390,41 @@ export default function LoginPage() {
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   style={{
-                    left: loading ? "160px" : `calc(8px + ${dragX}px)`,
+                    left: isSubmitting ? "160px" : `calc(8px + ${dragX}px)`,
                     touchAction: "none"
                   }}
                   className={`absolute top-2 z-10 w-8 h-8 rounded-full bg-[#4ADE80] flex items-center justify-center text-white cursor-grab active:cursor-grabbing ${
-                    !isDragging && !loading ? "transition-all duration-300 ease-out" : ""
-                  } ${loading ? "transition-all duration-700 ease-in-out" : ""}`}
+                    !isDragging && !isSubmitting ? "transition-all duration-300 ease-out" : ""
+                  } ${isSubmitting ? "transition-all duration-700 ease-in-out" : ""}`}
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <Check className="w-4 h-4" />
                   ) : (
                     <ArrowRight className="w-4 h-4" />
                   )}
                 </div>
                 <span className="absolute w-full text-center uppercase tracking-wider text-sm font-bold z-0 pointer-events-none">
-                  {loading ? "Signing in..." : "Login"}
+                  {isSubmitting ? "Signing in..." : "Login"}
                 </span>
               </button>
+
+              <div className="text-center pt-3">
+                <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors inline-flex items-center gap-1">
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back to Home Portals
+                </Link>
+              </div>
             </form>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

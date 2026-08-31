@@ -40,10 +40,11 @@ const nextConfig = {
 
   // ── Rewrites (Proxy API to avoid CORS and cross-port cookie issues) ────────
   async rewrites() {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/:path*`,
+        destination: `${apiBase}/api/:path*`,
       },
     ];
   },
@@ -51,6 +52,8 @@ const nextConfig = {
   // ── Redirects ─────────────────────────────────────────────────────────────
   async redirects() {
     return [
+      // Canonical login route alias
+      { source: "/login", destination: "/auth/login", permanent: false },
       // Fix common attendance URL typo
       {
         source: "/:schoolSlug/teacher/attendence",

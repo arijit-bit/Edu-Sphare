@@ -16,6 +16,7 @@ const router = express.Router();
 router.use(authenticate, authorizeRoles(ROLES.ADMIN));
 
 router.get('/stats', adminController.getStats);
+router.get('/dashboard', adminController.getStats);
 router.get('/users', adminController.getUsers);
 router.post('/users', validate(adminCreateUserSchema), adminController.createUser);
 router.patch('/users/:id/role', validate(updateUserRoleSchema), adminController.updateUserRole);

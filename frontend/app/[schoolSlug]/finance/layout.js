@@ -2,9 +2,9 @@
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
-export default function StudentLayout({ children }) {
+export default function FinanceLayout({ children }) {
   return (
-    <ProtectedRoute requiredRole="student" portalName="student">
+    <ProtectedRoute requiredRole="finance_manager" portalName="finance">
       {children}
     </ProtectedRoute>
   );

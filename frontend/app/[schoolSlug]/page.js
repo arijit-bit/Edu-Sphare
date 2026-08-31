@@ -20,10 +20,7 @@ export default async function SchoolPortalPage({ params }) {
   // pre-filled via query params. For real schools, users go straight to the dashboard
   // (middleware will redirect to login if they are not authenticated).
   const isDemoSchool = schoolSlug === "demo-school";
-  const roleHref = (roleId) =>
-    isDemoSchool
-      ? `/auth/login?role=${roleId}&school=${schoolSlug}`
-      : `/${schoolSlug}/${roleId}/dashboard`;
+  const roleHref = (roleId) => `/auth/login?portal=${roleId}`;
 
   const roles = [
     {

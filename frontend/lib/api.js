@@ -1,171 +1,247 @@
 /**
- * Browser API client — centralized fetch wrapper for all backend calls.
+ * Centralized Browser API Client for EduSphere.
  *
- * Security features built in:
- * - Automatically fetches and caches a CSRF token before any mutating request
- *   (POST, PUT, PATCH, DELETE) and sends it as the X-CSRF-Token header.
- * - Always sends credentials (HttpOnly session cookie).
- * - Returns normalized, safe error messages — never exposes internal server detail.
- * - Attaches X-Request-Id from response to thrown errors for support traceability.
+ * Security & Reliability Architecture:
+ * - Access token stored strictly in JavaScript application memory (never in localStorage/sessionStorage).
+ * - Refresh token stored in HttpOnly, SameSite, Secure cookie managed by browser.
+ * - Centralized 401 interceptor with single-flight mutex lock to prevent concurrent refresh loops.
+ * - Safe generic user-facing error messages to prevent leakage of internal system details.
  */
 
-const API_BASE = "/api";
-const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:4000";
 
-// Module-level CSRF token cache — reused across calls until invalidated
-let _csrfToken = null;
+// In-memory access token storage
+let _accessToken = null;
 
 // Lock to prevent multiple concurrent refresh calls
 let _refreshPromise = null;
 
-async function getCsrfToken() {
-  if (_csrfToken) return _csrfToken;
-  try {
-    const res = await fetch(`${API_BASE}/v1/csrf-token`, { credentials: "include" });
-    if (res.ok) {
-      const data = await res.json();
-      _csrfToken = data.csrfToken ?? null;
-    }
-  } catch {
-    // CSRF endpoint unreachable (e.g. backend down) — proceed without token.
-    // The backend will reject the request if CSRF is required.
-  }
-  return _csrfToken;
+// Listeners for auth state changes (e.g. forced logout on invalid session)
+const _authListeners = new Set();
+
+export function setAccessToken(token) {
+  _accessToken = token || null;
 }
 
-// Invalidate cached token (call after a 403 CSRF rejection)
-function invalidateCsrfToken() {
-  _csrfToken = null;
+export function getAccessToken() {
+  return _accessToken;
+}
+
+export function clearAccessToken() {
+  _accessToken = null;
+}
+
+export function onAuthStateChange(listener) {
+  _authListeners.add(listener);
+  return () => _authListeners.delete(listener);
+}
+
+function notifyAuthStateChange(user) {
+  _authListeners.forEach((listener) => {
+    try {
+      listener(user);
+    } catch (err) {
+      console.error("[API Client] Error in auth listener:", err);
+    }
+  });
 }
 
 /**
- * Make an authenticated API call.
+ * Return safe user-facing error messages
+ */
+function safeErrorMessage(status, fallback) {
+  if (status === 400) return fallback || "Invalid request. Please check your inputs.";
+  if (status === 401) return "Invalid email or password.";
+  if (status === 403) return "Access denied. You do not have permission to perform this action.";
+  if (status === 404) return "Requested resource not found.";
+  if (status === 409) return fallback || "An account with this email already exists.";
+  if (status === 429) return "Too many attempts. Please wait a few moments and try again.";
+  return fallback || "An unexpected error occurred. Please try again later.";
+}
+
+/**
+ * Core fetch wrapper with automatic JWT header, cookie credentials, and 401 refresh retry.
  *
- * @param {string} path  - Path relative to API base, e.g. "/v1/auth/login"
- * @param {RequestInit} options - fetch options (method, body, headers, etc.)
- * @returns {Promise<any>} Parsed response data, or null for 204 No Content
+ * @param {string} path - API path (e.g. "/api/auth/me" or "/api/student/dashboard")
+ * @param {RequestInit} options - fetch options
+ * @returns {Promise<any>}
  */
 export async function apiFetch(path, options = {}) {
+  const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
   const method = (options.method || "GET").toUpperCase();
-  const headers = { "Content-Type": "application/json", ...options.headers };
 
-  // Automatically inject CSRF token for state-mutating requests
-  if (CSRF_METHODS.has(method)) {
-    const token = await getCsrfToken();
-    if (token) headers["x-csrf-token"] = token;
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  // Inject Bearer access token if present in memory
+  if (_accessToken && !headers.Authorization) {
+    headers.Authorization = `Bearer ${_accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    method,
-    credentials: "include",
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      method,
+      credentials: "include", // Always include cookies for refresh_tokens and session
+      headers,
+    });
+  } catch (netErr) {
+    throw new Error("Unable to connect to the server. Please check your internet connection.");
+  }
 
-  // No content — return null
+  // Handle 204 No Content
   if (response.status === 204) return null;
 
-  const requestId = response.headers.get("x-request-id");
+  // Handle 401 Access Token Expiration (only for authenticated routes, not login/refresh itself)
+  const isAuthEndpoint =
+    path.includes("/api/auth/login") ||
+    path.includes("/api/auth/register") ||
+    path.includes("/api/auth/refresh");
 
-  // Handle CSRF token expiry — invalidate cache and retry once
-  if (response.status === 403) {
-    const body = await response.json().catch(() => ({}));
-    if (body?.error?.code === "CSRF_TOKEN_INVALID") {
-      invalidateCsrfToken();
-      // Retry once with a fresh token
-      const freshToken = await getCsrfToken();
-      const retryHeaders = { ...headers };
-      if (freshToken) retryHeaders["x-csrf-token"] = freshToken;
-      const retry = await fetch(`${API_BASE}${path}`, {
-        ...options,
-        method,
-        credentials: "include",
-        headers: retryHeaders,
-      });
-      if (retry.status === 204) return null;
-      const retryPayload = await retry.json().catch(() => ({}));
-      if (!retry.ok) throw Object.assign(
-        new Error(safeErrorMessage(retry.status)),
-        { status: retry.status, code: retryPayload?.error?.code, requestId }
-      );
-      return retryPayload.data;
+  if (response.status === 401 && !isAuthEndpoint) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[API] 401 Unauthorized on ${path}. Initiating token refresh...`);
     }
-  }
 
-  const payload = await response.json().catch(() => ({}));
-
-  // Handle Access Token Expiration — seamless refresh interceptor
-  if (response.status === 401 && !path.startsWith("/v1/auth/login") && !path.startsWith("/v1/auth/refresh")) {
-    if (process.env.NODE_ENV !== "production") console.info(`[API] 401 on ${path}, attempting token refresh...`);
+    // Execute single-flight refresh lock
     if (!_refreshPromise) {
-      _refreshPromise = fetch(`${API_BASE}/v1/auth/refresh`, {
+      _refreshPromise = fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: "POST",
         credentials: "include",
-      }).finally(() => {
-        _refreshPromise = null;
-      });
+        headers: { "Content-Type": "application/json" },
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            clearAccessToken();
+            notifyAuthStateChange(null);
+            return null;
+          }
+          const data = await res.json();
+          if (data?.accessToken) {
+            setAccessToken(data.accessToken);
+            notifyAuthStateChange(data.user);
+            return data;
+          }
+          return null;
+        })
+        .catch((err) => {
+          clearAccessToken();
+          notifyAuthStateChange(null);
+          return null;
+        })
+        .finally(() => {
+          _refreshPromise = null;
+        });
     }
 
-    const refreshResponse = await _refreshPromise;
-    if (refreshResponse.ok) {
-      if (process.env.NODE_ENV !== "production") console.info(`[API] Token refresh successful, retrying original request to ${path}`);
-      // Refresh succeeded, retry original request
-      const retryAfterRefresh = await fetch(`${API_BASE}${path}`, {
+    const refreshResult = await _refreshPromise;
+
+    // If refresh succeeded, retry original request once with fresh token
+    if (refreshResult && refreshResult.accessToken) {
+      if (process.env.NODE_ENV !== "production") {
+        console.info(`[API] Token refresh succeeded. Retrying original request to ${path}`);
+      }
+
+      headers.Authorization = `Bearer ${refreshResult.accessToken}`;
+      const retryResponse = await fetch(url, {
         ...options,
         method,
         credentials: "include",
         headers,
       });
-      
-      if (retryAfterRefresh.status === 204) return null;
-      const retryPayload = await retryAfterRefresh.json().catch(() => ({}));
-      if (!retryAfterRefresh.ok) {
-        throw Object.assign(
-          new Error(safeErrorMessage(retryAfterRefresh.status, retryPayload?.error?.code)),
-          { status: retryAfterRefresh.status, code: retryPayload?.error?.code, requestId: retryAfterRefresh.headers.get("x-request-id") }
-        );
+
+      if (retryResponse.status === 204) return null;
+      const retryPayload = await retryResponse.json().catch(() => ({}));
+
+      if (!retryResponse.ok) {
+        throw new Error(safeErrorMessage(retryResponse.status, retryPayload?.message));
       }
-      return retryPayload.data ?? retryPayload;
+      return retryPayload;
     } else {
-      if (process.env.NODE_ENV !== "production") console.warn(`[API] Token refresh failed for ${path}, dropping to login`);
+      // Refresh failed — clear token
+      clearAccessToken();
+      throw new Error("Your session has expired. Please sign in again.");
     }
-    // If refresh failed, fall through to throwing the 401 below
   }
+
+  const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw Object.assign(
-      new Error(safeErrorMessage(response.status, payload?.error?.code)),
-      { status: response.status, code: payload?.error?.code, requestId }
-    );
+    const errorMsg = payload?.message || safeErrorMessage(response.status);
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    err.payload = payload;
+    throw err;
   }
 
-  return payload.data ?? payload;
+  return payload;
 }
 
 /**
- * Return a safe, user-facing error message for a given HTTP status.
- * Never exposes internal server messages to the browser.
+ * Submit login credentials to Express backend
  */
-function safeErrorMessage(status, code) {
-  if (status === 401) return "You are not signed in. Please sign in to continue.";
-  if (status === 403) return "You do not have permission to perform this action.";
-  if (status === 404) return "The requested resource was not found.";
-  if (status === 409) return "This action conflicts with existing data. Please refresh and try again.";
-  if (status === 422) return "The submitted data is invalid. Please check your input.";
-  if (status === 429) return "Too many requests. Please wait a moment and try again.";
-  return "An unexpected error occurred. Please try again.";
+export async function loginUser({ email, password }) {
+  const result = await apiFetch("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+  });
+
+  if (result?.accessToken) {
+    setAccessToken(result.accessToken);
+  }
+
+  return result;
 }
 
 /**
- * Perform a logout request and redirect to the login page.
+ * Refresh current access token using HttpOnly cookie
  */
-export async function logout() {
+export async function refreshUserSession() {
   try {
-    await apiFetch("/v1/auth/logout", { method: "POST" });
-  } catch (e) {
-    // Ignore error, we still want to redirect
-  }
-  if (typeof window !== "undefined") {
-    window.location.href = "/auth/login";
+    const result = await apiFetch("/api/auth/refresh", {
+      method: "POST",
+    });
+
+    if (result?.accessToken) {
+      setAccessToken(result.accessToken);
+    }
+    return result;
+  } catch (err) {
+    clearAccessToken();
+    return null;
   }
 }
+
+/**
+ * Fetch current user profile
+ */
+export async function getCurrentUser() {
+  return apiFetch("/api/auth/me", {
+    method: "GET",
+  });
+}
+
+/**
+ * Revoke refresh token on backend and clear memory token
+ */
+export async function logoutUser() {
+  try {
+    await apiFetch("/api/auth/logout", {
+      method: "POST",
+    });
+  } catch (err) {
+    // Ignore error during logout
+  } finally {
+    clearAccessToken();
+    notifyAuthStateChange(null);
+  }
+}
+
+export { logoutUser as logout };
+

@@ -9,18 +9,20 @@ export function proxy(request) {
   const isProtectedRoute = pathname.match(/^\/[^\/]+\/(student|teacher|finance|admin)(\/.*)?$/);
 
   if (isProtectedRoute) {
-    // Check for either access_token or refresh_token (lightweight check, authoritative check is done by backend)
-    const hasAccessToken = !!request.cookies.get("access_token")?.value;
-    const hasRefreshToken = !!request.cookies.get("refresh_token")?.value;
+    const portal = isProtectedRoute[1];
+    // Check for either access token or refresh token cookie
+    const hasAccessToken = !!request.cookies.get("accessToken")?.value || !!request.cookies.get("access_token")?.value;
+    const hasRefreshToken = !!request.cookies.get("refreshToken")?.value || !!request.cookies.get("refresh_token")?.value;
     const hasAnyToken = hasAccessToken || hasRefreshToken;
 
     // Safe diagnostic log in development
     if (process.env.NODE_ENV !== "production") {
-      console.info(`[Proxy] Protected route access attempted: ${pathname}`, { hasAccessToken, hasRefreshToken, allowed: hasAnyToken });
+      console.info(`[Proxy] Protected route access attempted: ${pathname}`, { portal, hasAccessToken, hasRefreshToken, allowed: hasAnyToken });
     }
 
     if (!hasAnyToken) {
       const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("portal", portal);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }

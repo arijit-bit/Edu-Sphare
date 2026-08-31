@@ -56,6 +56,8 @@ function getMobileNavItems(schoolSlug) {
   ];
 }
 
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
 export default function TeacherLayout({ children }) {
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -193,59 +195,61 @@ export default function TeacherLayout({ children }) {
   );
 
   return (
-    <TeacherLayoutContext.Provider value={{ mobileOpen, setMobileOpen }}>
-      <div
-        className="min-h-screen bg-background text-foreground transition-colors duration-300"
-        style={teacherThemeVars}
-      >
-        <aside
-          className={cn(
-            "hidden lg:fixed lg:inset-y-0 z-40 lg:flex lg:w-64 lg:flex-col border-r",
-            isDark ? "border-neutral-800 bg-[#050505]" : "border-slate-200 bg-white"
-          )}
+    <ProtectedRoute requiredRole="teacher" portalName="teacher">
+      <TeacherLayoutContext.Provider value={{ mobileOpen, setMobileOpen }}>
+        <div
+          className="min-h-screen bg-background text-foreground transition-colors duration-300"
+          style={teacherThemeVars}
         >
-          {sidebarContent}
-        </aside>
-
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent
-            side="left"
+          <aside
             className={cn(
-              "w-64 border-r-0 p-0 shadow-xl",
-              isDark ? "bg-[#050505] text-neutral-100" : "bg-white text-slate-900"
+              "hidden lg:fixed lg:inset-y-0 z-40 lg:flex lg:w-64 lg:flex-col border-r",
+              isDark ? "border-neutral-800 bg-[#050505]" : "border-slate-200 bg-white"
             )}
           >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Navigation Menu</SheetTitle>
-            </SheetHeader>
             {sidebarContent}
-          </SheetContent>
-        </Sheet>
+          </aside>
 
-        <div className="flex min-h-screen flex-col pb-0 max-lg:pb-16 lg:pl-64">
-          <div className="flex flex-1 flex-col">{children}</div>
-        </div>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent
+              side="left"
+              className={cn(
+                "w-64 border-r-0 p-0 shadow-xl",
+                isDark ? "bg-[#050505] text-neutral-100" : "bg-white text-slate-900"
+              )}
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+              </SheetHeader>
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
 
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden shadow-lg">
-          {mobileBottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.label + item.href}
-                href={item.href}
-                className={cn(
-                  "flex h-full w-full flex-col items-center justify-center gap-1 transition-all duration-200",
-                  active ? "scale-105 text-cyan-500" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="size-5" />
-                <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
-              </Link>
-            );
-          })}
+          <div className="flex min-h-screen flex-col pb-0 max-lg:pb-16 lg:pl-64">
+            <div className="flex flex-1 flex-col">{children}</div>
+          </div>
+
+          <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden shadow-lg">
+            {mobileBottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.label + item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex h-full w-full flex-col items-center justify-center gap-1 transition-all duration-200",
+                    active ? "scale-105 text-cyan-500" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="size-5" />
+                  <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </TeacherLayoutContext.Provider>
+      </TeacherLayoutContext.Provider>
+    </ProtectedRoute>
   );
 }
