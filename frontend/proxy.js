@@ -49,7 +49,7 @@ export function proxy(request) {
     // No plugins
     `object-src 'none'`,
     // Block mixed content
-    `upgrade-insecure-requests`,
+    ...(isDev ? [] : [`upgrade-insecure-requests`]),
   ].join("; ");
 
   const requestHeaders = new Headers(request.headers);

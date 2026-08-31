@@ -38,6 +38,16 @@ const nextConfig = {
     ];
   },
 
+  // ── Rewrites (Proxy API to avoid CORS and cross-port cookie issues) ────────
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/:path*`,
+      },
+    ];
+  },
+
   // ── Redirects ─────────────────────────────────────────────────────────────
   async redirects() {
     return [

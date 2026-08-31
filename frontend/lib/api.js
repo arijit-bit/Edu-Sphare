@@ -9,7 +9,7 @@
  * - Attaches X-Request-Id from response to thrown errors for support traceability.
  */
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000");
+const API_BASE = "/api";
 const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 // Module-level CSRF token cache — reused across calls until invalidated

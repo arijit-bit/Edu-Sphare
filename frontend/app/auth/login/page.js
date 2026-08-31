@@ -91,12 +91,10 @@ export default function LoginPage() {
     }
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-
       // Fetch CSRF token
       let csrfToken = "";
       try {
-        const csrfRes = await fetch(`${baseUrl}/v1/csrf-token`, { credentials: "include" });
+        const csrfRes = await fetch("/api/v1/csrf-token", { credentials: "include" });
         if (csrfRes.ok) {
           const csrfData = await csrfRes.json();
           csrfToken = csrfData.csrfToken ?? "";
@@ -108,7 +106,7 @@ export default function LoginPage() {
       }
 
       // Submit credentials
-      const response = await fetch(`${baseUrl}/v1/auth/login`, {
+      const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         credentials: "include",
         headers: {
