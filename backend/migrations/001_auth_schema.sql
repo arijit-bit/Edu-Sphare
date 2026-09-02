@@ -47,16 +47,25 @@ SET
   last_name = COALESCE(NULLIF(SUBSTRING(name FROM POSITION(' ' IN name) + 1), ''), 'Account')
 WHERE name IS NOT NULL AND (first_name IS NULL OR last_name IS NULL);
 
--- 4. Sync existing roles from memberships table (if existing)
-UPDATE public.users u
-SET role = CASE 
-    WHEN m.role = 'finance' THEN 'finance_manager'
-    WHEN m.role = 'teacher' THEN 'teacher'
-    WHEN m.role = 'admin' THEN 'admin'
-    ELSE 'student'
-END
-FROM public.memberships m
-WHERE u.id = m.user_id AND u.role = 'student';
+-- 4. Sync existing roles from memberships table (if table exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'memberships'
+  ) THEN
+    EXECUTE '
+      UPDATE public.users u
+      SET role = CASE 
+          WHEN m.role = ''finance'' THEN ''finance_manager''
+          WHEN m.role = ''teacher'' THEN ''teacher''
+          WHEN m.role = ''admin'' THEN ''admin''
+          ELSE ''student''
+      END
+      FROM public.memberships m
+      WHERE u.id = m.user_id AND u.role = ''student''
+    ';
+  END IF;
+END $$;
 
 -- 5. Create refresh_tokens table
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (
