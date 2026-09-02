@@ -16,10 +16,19 @@ export function ProtectedRoute({ children, requiredRole, portalName }) {
   const targetPortal = portalName || (requiredRole ? getPortalForRole(requiredRole) : "student");
 
   useEffect(() => {
+    console.info(`[ProtectedRoute] 🛡️ Checking access for ${pathname} | Required: ${requiredRole || "any"} | User: ${user ? `${user.role} (${user.email})` : "none"} | Loading: ${isLoading}`);
+
     if (!isLoading && !isAuthenticated) {
+      console.info(`[ProtectedRoute] 🔒 Not authenticated -> Redirecting to login for portal: ${targetPortal}`);
       router.push(`/auth/login?portal=${targetPortal}&next=${encodeURIComponent(pathname)}`);
+    } else if (!isLoading && isAuthenticated && user) {
+      if (requiredRole && user.role !== requiredRole) {
+        console.warn(`[ProtectedRoute] 🚫 Access Denied: User is ${user.role}, but route requires ${requiredRole}`);
+      } else {
+        console.info(`[ProtectedRoute] ✅ Access Granted: User ${user.email} (${user.role}) entering ${pathname}`);
+      }
     }
-  }, [isLoading, isAuthenticated, router, targetPortal, pathname]);
+  }, [isLoading, isAuthenticated, user, requiredRole, router, targetPortal, pathname]);
 
   // 1. Loading State
   if (isLoading) {
