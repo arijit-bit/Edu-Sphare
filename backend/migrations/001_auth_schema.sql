@@ -6,7 +6,22 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "citext";
 
--- 2. Safely add missing columns to public.users
+-- 2. Create users table if not exists or add missing columns
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email CITEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name TEXT,
+  last_name TEXT,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'student',
+  status TEXT NOT NULL DEFAULT 'active',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 ALTER TABLE public.users 
   ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'student',
   ADD COLUMN IF NOT EXISTS first_name TEXT,
