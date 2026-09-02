@@ -8,12 +8,20 @@
  * - Safe generic user-facing error messages to prevent leakage of internal system details.
  */
 
-// In browser environments, default to relative paths ("/api/...") so requests route through
-// the same-origin Next.js proxy rewrites defined in next.config.mjs. This avoids cross-origin
-// third-party cookie blocking, Safari ITP, and CORS preflight issues in deployed environments.
+// In browser environments, ALWAYS use relative paths ("/api/...") so requests route through
+// the same-origin Next.js proxy rewrites in next.config.mjs.
+//
+// ⚠️ WHY THIS MATTERS (Brave / Safari / Firefox):
+//   If the browser calls the backend (onrender.com) directly, the refreshToken cookie is
+//   set on a DIFFERENT origin (cross-site). Brave Shields and Safari ITP silently block
+//   these third-party SameSite=None cookies, causing the login loop / 401 on /api/auth/refresh.
+//
+//   By always using "" here, the browser fetches /api/auth/login from vercel.app (same-origin),
+//   the Next.js proxy forwards it to onrender.com server-side, and the Set-Cookie header is
+//   written back onto vercel.app → same-origin → accepted by ALL browsers.
 const API_BASE_URL =
   typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_API_BASE_URL || "")
+    ? "" // Browser: always use relative paths → Next.js proxy (same-origin cookies)
     : (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000");
 
 // In-memory access token storage
