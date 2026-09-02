@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getDashboardForRole } from "@/lib/constants";
@@ -15,16 +15,36 @@ import { Loader2 } from "lucide-react";
 export function HomeAuthGuard({ children, schoolSlug }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
+    console.info(`[HomeAuthGuard] 🔍 Evaluating auth status: isLoading=${isLoading}, isAuthenticated=${isAuthenticated}, user=${user ? user.role : "null"}`);
+
+    if (!isLoading && isAuthenticated && user && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       const activeSlug =
         schoolSlug ||
         (typeof window !== "undefined" && localStorage.getItem("edusphere_school_slug")) ||
         user.schoolSlug ||
         "demo-school";
       const destination = getDashboardForRole(user.role, activeSlug);
-      router.replace(destination);
+
+      console.info(`[HomeAuthGuard] 🚀 Authenticated user found (${user.role} - ${user.email}) -> Redirecting to dashboard: ${destination}`);
+
+      // Primary navigation via Next.js client router
+      router.push(destination);
+
+      // Fallback navigation in case Next.js client transition is delayed during root hydration
+      const fallbackTimer = setTimeout(() => {
+        if (typeof window !== "undefined" && (window.location.pathname === "/" || window.location.pathname === `/${schoolSlug}`)) {
+          console.info(`[HomeAuthGuard] ⚡ Executing direct fallback navigation to: ${destination}`);
+          window.location.replace(destination);
+        }
+      }, 600);
+
+      return () => clearTimeout(fallbackTimer);
+    } else if (!isLoading && (!isAuthenticated || !user)) {
+      console.info("[HomeAuthGuard] 🌐 Visitor is unauthenticated -> Displaying public landing page.");
     }
   }, [isLoading, isAuthenticated, user, schoolSlug, router]);
 
@@ -36,7 +56,9 @@ export function HomeAuthGuard({ children, schoolSlug }) {
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg animate-pulse">
             <Loader2 className="size-6 animate-spin" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Checking session...</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {isAuthenticated && user ? `Redirecting to ${user.role} portal...` : "Checking session..."}
+          </p>
         </div>
       </div>
     );

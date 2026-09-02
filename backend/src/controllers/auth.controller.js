@@ -110,8 +110,10 @@ class AuthController {
           ipAddress,
         });
 
-      // Set new rotated refresh token in HttpOnly cookie
-      res.cookie(REFRESH_COOKIE_NAME, newRawRefreshToken, getRefreshCookieOptions(expiresAt));
+      // Set new rotated refresh token in HttpOnly cookie if rotated
+      if (newRawRefreshToken) {
+        res.cookie(REFRESH_COOKIE_NAME, newRawRefreshToken, getRefreshCookieOptions(expiresAt));
+      }
 
       return res.status(HTTP_STATUS.OK).json({
         success: true,

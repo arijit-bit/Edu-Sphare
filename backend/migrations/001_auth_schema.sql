@@ -6,7 +6,22 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "citext";
 
--- 2. Safely add missing columns to public.users
+-- 2. Create users table if not exists or add missing columns
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email CITEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name TEXT,
+  last_name TEXT,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'student',
+  status TEXT NOT NULL DEFAULT 'active',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 ALTER TABLE public.users 
   ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'student',
   ADD COLUMN IF NOT EXISTS first_name TEXT,
@@ -32,16 +47,25 @@ SET
   last_name = COALESCE(NULLIF(SUBSTRING(name FROM POSITION(' ' IN name) + 1), ''), 'Account')
 WHERE name IS NOT NULL AND (first_name IS NULL OR last_name IS NULL);
 
--- 4. Sync existing roles from memberships table (if existing)
-UPDATE public.users u
-SET role = CASE 
-    WHEN m.role = 'finance' THEN 'finance_manager'
-    WHEN m.role = 'teacher' THEN 'teacher'
-    WHEN m.role = 'admin' THEN 'admin'
-    ELSE 'student'
-END
-FROM public.memberships m
-WHERE u.id = m.user_id AND u.role = 'student';
+-- 4. Sync existing roles from memberships table (if table exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'memberships'
+  ) THEN
+    EXECUTE '
+      UPDATE public.users u
+      SET role = CASE 
+          WHEN m.role = ''finance'' THEN ''finance_manager''
+          WHEN m.role = ''teacher'' THEN ''teacher''
+          WHEN m.role = ''admin'' THEN ''admin''
+          ELSE ''student''
+      END
+      FROM public.memberships m
+      WHERE u.id = m.user_id AND u.role = ''student''
+    ';
+  END IF;
+END $$;
 
 -- 5. Create refresh_tokens table
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (

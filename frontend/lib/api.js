@@ -8,10 +8,13 @@
  * - Safe generic user-facing error messages to prevent leakage of internal system details.
  */
 
+// In browser environments, default to relative paths ("/api/...") so requests route through
+// the same-origin Next.js proxy rewrites defined in next.config.mjs. This avoids cross-origin
+// third-party cookie blocking, Safari ITP, and CORS preflight issues in deployed environments.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:4000";
+  typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_API_BASE_URL || "")
+    : (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000");
 
 // In-memory access token storage
 let _accessToken = null;
@@ -24,6 +27,11 @@ const _authListeners = new Set();
 
 export function setAccessToken(token) {
   _accessToken = token || null;
+  if (_accessToken) {
+    console.info("[API Client] 🔑 Access Token set in memory.");
+  } else {
+    console.info("[API Client] 🔒 Access Token cleared from memory.");
+  }
 }
 
 export function getAccessToken() {
@@ -32,6 +40,7 @@ export function getAccessToken() {
 
 export function clearAccessToken() {
   _accessToken = null;
+  console.info("[API Client] 🔒 Access Token cleared.");
 }
 
 export function onAuthStateChange(listener) {
@@ -40,6 +49,11 @@ export function onAuthStateChange(listener) {
 }
 
 function notifyAuthStateChange(user) {
+  if (user) {
+    console.info(`[API Client] 👤 Auth state changed: Logged in as ${user.role} (${user.email})`);
+  } else {
+    console.info("[API Client] 👤 Auth state changed: Logged out / Unauthenticated");
+  }
   _authListeners.forEach((listener) => {
     try {
       listener(user);
@@ -187,6 +201,7 @@ export async function apiFetch(path, options = {}) {
  * Submit login credentials to Express backend
  */
 export async function loginUser({ email, password }) {
+  console.info(`[API Client] 🔐 Submitting login for ${email}...`);
   const result = await apiFetch("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
@@ -194,6 +209,7 @@ export async function loginUser({ email, password }) {
 
   if (result?.accessToken) {
     setAccessToken(result.accessToken);
+    console.info(`[API Client] ✅ Login successful: Access granted for ${result.user?.role} (${result.user?.email})`);
   }
 
   return result;
@@ -203,16 +219,21 @@ export async function loginUser({ email, password }) {
  * Refresh current access token using HttpOnly cookie
  */
 export async function refreshUserSession() {
+  console.info("[API Client] 🔍 Searching for active session / token cookie...");
   try {
     const result = await apiFetch("/api/auth/refresh", {
       method: "POST",
     });
 
-    if (result?.accessToken) {
+    if (result?.accessToken && result?.user) {
       setAccessToken(result.accessToken);
+      console.info(`[API Client] ✅ Token found -> Active session restored: Logged in as ${result.user.role} (${result.user.email})`);
+      return result;
     }
-    return result;
+    console.info("[API Client] ❌ Token not found or empty response -> Unauthenticated user");
+    return null;
   } catch (err) {
+    console.info(`[API Client] ⚠️ Session check completed: No active session (${err.message})`);
     clearAccessToken();
     return null;
   }
@@ -231,6 +252,7 @@ export async function getCurrentUser() {
  * Revoke refresh token on backend and clear memory token
  */
 export async function logoutUser() {
+  console.info("[API Client] 🚪 Logging out user...");
   try {
     await apiFetch("/api/auth/logout", {
       method: "POST",
@@ -240,6 +262,7 @@ export async function logoutUser() {
   } finally {
     clearAccessToken();
     notifyAuthStateChange(null);
+    console.info("[API Client] 🔒 Logged out successfully");
   }
 }
 

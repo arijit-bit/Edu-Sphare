@@ -156,10 +156,51 @@ class AuthService {
 
     const tokenRecord = tokenResult.rows[0];
 
-    // Reuse detection: If token was already revoked, someone may be trying token theft
+    // Reuse detection with multi-tab grace period (30s)
     if (tokenRecord.revoked_at !== null) {
+      const gracePeriodMs = process.env.REFRESH_TOKEN_GRACE_PERIOD_MS !== undefined
+        ? parseInt(process.env.REFRESH_TOKEN_GRACE_PERIOD_MS, 10)
+        : 30000; // 30s grace window for multi-tab concurrency
+
+      const timeSinceRevocation = Date.now() - new Date(tokenRecord.revoked_at).getTime();
+      const isWithinGracePeriod = timeSinceRevocation < gracePeriodMs;
+
+      if (isWithinGracePeriod && tokenRecord.replaced_by_token_id) {
+        logger.info(
+          `[Auth Service] Refresh token rotated recently (${timeSinceRevocation}ms ago). Serving replacement token in grace window for user ${tokenRecord.user_id}.`
+        );
+
+        // Fetch replacement token
+        const replacementResult = await db.query(
+          `SELECT id, user_id, token_hash, family_id, expires_at, revoked_at 
+           FROM public.refresh_tokens 
+           WHERE id = $1 LIMIT 1`,
+          [tokenRecord.replaced_by_token_id]
+        );
+
+        if (replacementResult.rows.length > 0 && replacementResult.rows[0].revoked_at === null) {
+          const userResult = await db.query(
+            `SELECT id, email, first_name, last_name, role, is_active, status 
+             FROM public.users 
+             WHERE id = $1 LIMIT 1`,
+            [tokenRecord.user_id]
+          );
+
+          if (userResult.rows.length > 0 && userResult.rows[0].is_active) {
+            const user = userResult.rows[0];
+            const newAccessToken = signAccessToken(user.id);
+            return {
+              user: sanitizeUser(user),
+              accessToken: newAccessToken,
+              rawRefreshToken: null, // Keep existing active cookie
+              expiresAt: new Date(replacementResult.rows[0].expires_at),
+            };
+          }
+        }
+      }
+
       logger.warn(
-        `🚨 REFRESH TOKEN REUSE DETECTED for user ${tokenRecord.user_id} and family ${tokenRecord.family_id}. Revoking entire family.`
+        `🚨 REFRESH TOKEN REUSE DETECTED for user ${tokenRecord.user_id} and family ${tokenRecord.family_id} (Revoked ${timeSinceRevocation}ms ago). Revoking entire family.`
       );
       // Invalidate all tokens in this family immediately
       await db.query(
