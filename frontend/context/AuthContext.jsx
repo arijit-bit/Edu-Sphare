@@ -62,7 +62,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    // Initial session check
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     restoreSession();
 
     // Listen to external auth events (e.g. token expired on API call)
