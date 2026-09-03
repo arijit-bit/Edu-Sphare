@@ -64,6 +64,7 @@ export default function AdminStudentsPage() {
         method: "POST",
         body: JSON.stringify({
           ...formData,
+          monthlyFee: formData.monthlyFee ? parseFloat(formData.monthlyFee) : 0,
           role: "student",
         }),
       });
