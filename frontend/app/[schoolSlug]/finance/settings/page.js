@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
 import { FinanceShell, PageHeader } from "@/components/shells/finance-ui";
 import {
   Card,
@@ -43,6 +44,8 @@ import {
   Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
+
 
 const SETTING_ITEMS = [
   {
@@ -91,47 +94,66 @@ const SETTING_ITEMS = [
 
 export default function FinanceSettingsPage() {
   const [selectedSetting, setSelectedSetting] = useState(null);
-  const [feeRate, setFeeRate] = useState("12,000");
-  const [activeYear, setActiveYear] = useState("2025-2026");
-  const [reminderDays, setReminderDays] = useState("5");
-  const [smsAlert, setSmsAlert] = useState(true);
+  const [settings, setSettings]       = useState(null);
+  const [activeYear, setActiveYear]   = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
 
-  // Modal temporary values
-  const [tempFeeRate, setTempFeeRate] = useState(feeRate);
-  const [tempActiveYear, setTempActiveYear] = useState(activeYear);
-  const [tempReminderDays, setTempReminderDays] = useState(reminderDays);
-  const [tempSmsAlert, setTempSmsAlert] = useState(smsAlert);
+  // Modal temp values
+  const [tempFeeRate, setTempFeeRate]           = useState("");
+  const [tempReminderDays, setTempReminderDays] = useState("");
+  const [tempSmsAlert, setTempSmsAlert]         = useState(true);
 
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
+  const loadSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiFetch("/api/finance/settings");
+      setSettings(res.data?.settings ?? {});
+      setActiveYear(res.data?.activeAcademicYear ?? null);
+    } catch (err) {
+      triggerToast("Failed to load settings: " + (err.message || ""), "error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadSettings(); }, [loadSettings]);
+
   const triggerToast = (message, type = "success") => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
-    }, 3000);
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
-  const handleSave = (title) => {
-    if (selectedSetting === "fee") {
-      setFeeRate(tempFeeRate);
-    } else if (selectedSetting === "academic") {
-      setActiveYear(tempActiveYear);
-    } else if (selectedSetting === "reminders") {
-      setReminderDays(tempReminderDays);
-      setSmsAlert(tempSmsAlert);
+  const handleSave = async (title) => {
+    setSaving(true);
+    try {
+      const updates = {};
+      if (selectedSetting === "fee")       updates.fee_due_day = parseInt(tempFeeRate) || 10;
+      if (selectedSetting === "reminders") {
+        updates.reminder_days_before = parseInt(tempReminderDays) || 5;
+        updates.sms_alerts_enabled   = tempSmsAlert;
+      }
+      await apiFetch("/api/finance/settings", {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      });
+      await loadSettings();
+      triggerToast(`Settings for "${title}" saved successfully!`);
+      setSelectedSetting(null);
+    } catch (err) {
+      triggerToast(err.message || "Save failed.", "error");
+    } finally {
+      setSaving(false);
     }
-    triggerToast(`Settings for "${title}" saved successfully!`);
-    setSelectedSetting(null);
   };
 
   const openSetting = (id) => {
-    if (id === "fee") {
-      setTempFeeRate(feeRate);
-    } else if (id === "academic") {
-      setTempActiveYear(activeYear);
-    } else if (id === "reminders") {
-      setTempReminderDays(reminderDays);
-      setTempSmsAlert(smsAlert);
+    if (id === "fee")       setTempFeeRate(String(settings?.fee_due_day ?? 10));
+    if (id === "reminders") {
+      setTempReminderDays(String(settings?.reminder_days_before ?? 5));
+      setTempSmsAlert(settings?.sms_alerts_enabled ?? true);
     }
     setSelectedSetting(id);
   };

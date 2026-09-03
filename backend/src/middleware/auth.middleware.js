@@ -33,8 +33,9 @@ async function authenticate(req, res, next) {
     }
 
     // Always fetch the live user state from PostgreSQL to verify status and role
+    // Also fetch school_id so all finance/admin controllers can scope queries per school
     const userResult = await db.query(
-      `SELECT id, email, first_name, last_name, role, is_active, status 
+      `SELECT id, email, first_name, last_name, role, is_active, status, school_id
        FROM public.users 
        WHERE id = $1 LIMIT 1`,
       [decoded.sub]
@@ -58,6 +59,7 @@ async function authenticate(req, res, next) {
       lastName: user.last_name,
       role: user.role,
       isActive: user.is_active,
+      schoolId: user.school_id,   // ← critical for multi-tenant finance scoping
     };
 
     return next();

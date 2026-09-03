@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+
 import { format } from "date-fns";
 
 import { FinanceShell, PageHeader, StatusBadge } from "@/components/shells/finance-ui";
@@ -32,31 +33,12 @@ import {
   ListTodo
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
-const MONTH_OPTIONS = ["April 2026", "May 2026", "June 2026", "July 2026"];
-
-const TEACHER_ROWS = [
-  { id: "FAC-1024", name: "Meera Iyer", faculty: "Mathematics", salary: 68000, month: "May 2026", status: "Pending" },
-  { id: "FAC-1031", name: "Rahul Sen", faculty: "Science", salary: 82000, month: "May 2026", status: "Pending" },
-  { id: "FAC-1048", name: "Ananya Bose", faculty: "English", salary: 58000, month: "May 2026", status: "Paid" },
-  { id: "FAC-1075", name: "Farah Ali", faculty: "Computer Science", salary: 72000, month: "May 2026", status: "Pending" },
-];
-
-const STUDENT_ROWS = [
-  { id: "STU-2401", name: "Aarav Sharma", grade: "10-A", fee: 12000, months: ["May 2026"], status: "Paid" },
-  { id: "STU-2417", name: "Diya Patel", grade: "8-B", fee: 10500, months: ["May 2026", "June 2026"], status: "Pending" },
-  { id: "STU-2328", name: "Kabir Verma", grade: "12-C", fee: 15000, months: ["May 2026"], status: "Pending" },
-  { id: "STU-2506", name: "Ira Khan", grade: "6-A", fee: 8800, months: ["May 2026"], status: "Paid" },
-];
-
-const OTHER_DEFAULT = [
-  { id: "OTH-101", category: "Hostel", type: "Income", amount: 185000, paymentMode: "Online", paymentRef: "HTL-778201", date: "2026-05-20", month: "May 2026" },
-  { id: "OTH-102", category: "Transportation", type: "Income", amount: 92000, paymentMode: "Cash", paymentRef: "Paid via cash", date: "2026-05-18", month: "May 2026" },
-  { id: "OTH-103", category: "Maintenance", type: "Expense", amount: 146000, paymentMode: "Online", paymentRef: "MNT-210554", date: "2026-05-14", month: "May 2026" },
-  { id: "OTH-104", category: "Admission", type: "Income", amount: 248000, paymentMode: "Online", paymentRef: "ADM-990812", date: "2026-05-11", month: "May 2026" },
-];
 
 const OTHER_CATEGORY_OPTIONS = ["Hostel", "Transportation", "Maintenance", "Admission", "Custom"];
+
 
 function formatCurrency(value) {
   return `Rs ${value.toLocaleString("en-IN")}`;
@@ -148,13 +130,39 @@ function QueueListRow({ title, subtitle, icon: Icon, amount, meta, status, onCli
   );
 }
 
+const MONTH_OPTIONS = ["April 2026", "May 2026", "June 2026", "July 2026"];
+
 export default function FinanceAuditPage() {
   const [activeView, setActiveView] = useState("teachers");
-  
-  const [teacherRows, setTeacherRows] = useState(TEACHER_ROWS);
-  const [studentRows, setStudentRows] = useState(STUDENT_ROWS);
-  const [otherRows, setOtherRows] = useState(OTHER_DEFAULT);
+  const [selectedMonth, setSelectedMonth] = useState("May 2026");
+
+  const [teacherRows, setTeacherRows] = useState([]);
+  const [studentRows, setStudentRows] = useState([]);
+  const [otherRows, setOtherRows]     = useState([]);
+  const [loading, setLoading]         = useState(true);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Load all three data sources in parallel when month changes
+  const loadAuditData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [teacherRes, studentRes, otherRes] = await Promise.all([
+        apiFetch(`/api/finance/audit/teachers?month=${encodeURIComponent(selectedMonth)}`),
+        apiFetch(`/api/finance/audit/students?month=${encodeURIComponent(selectedMonth)}`),
+        apiFetch(`/api/finance/audit/other-income?month=${encodeURIComponent(selectedMonth)}`),
+      ]);
+      setTeacherRows(teacherRes.data ?? []);
+      setStudentRows(studentRes.data ?? []);
+      setOtherRows(otherRes.data ?? []);
+    } catch (err) {
+      showToast("Failed to load audit data: " + (err.message || ""));
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => { loadAuditData(); }, [loadAuditData]);
+
 
   // Audit Sheet States
   const [teacherAudit, setTeacherAudit] = useState(null);
@@ -265,47 +273,39 @@ export default function FinanceAuditPage() {
     setStudentAudit(null);
   };
 
-  const submitOtherEntry = () => {
+  const submitOtherEntry = async () => {
     const resolvedName = otherCategory === "Custom" ? customName.trim() : otherCategory;
     const amount = Number(otherAmount);
 
-    if (!resolvedName) {
-      showToast("Add a custom name when category is custom.");
-      return;
-    }
-    if (!amount || amount <= 0) {
-      showToast("Enter a valid amount for the ledger entry.");
-      return;
-    }
-    if (otherMode === "online" && !otherTransactionId.trim()) {
-      showToast("Add a transaction ID for online ledger entries.");
-      return;
-    }
+    if (!resolvedName) { showToast("Add a custom name when category is custom."); return; }
+    if (!amount || amount <= 0) { showToast("Enter a valid amount for the ledger entry."); return; }
+    if (otherMode === "online" && !otherTransactionId.trim()) { showToast("Add a transaction ID for online ledger entries."); return; }
 
-    setOtherRows((prev) => [
-      {
-        id: `OTH-${100 + prev.length + 1}`,
-        category: resolvedName,
-        type: otherType,
-        amount,
-        paymentMode: otherMode === "online" ? "Online" : "Cash",
-        paymentRef: formatModeLabel(otherMode, otherTransactionId.trim()),
-        date: otherDate,
-        month: otherMonth,
-      },
-      ...prev,
-    ]);
-
-    setOtherCategory("Hostel");
-    setCustomName("");
-    setOtherType("Income");
-    setOtherAmount("");
-    setOtherMode("offline");
-    setOtherTransactionId("");
-    setOtherDate("2026-05-24");
-    setOtherMonth("May 2026");
-    showToast("Ledger entry recorded successfully.");
+    try {
+      await apiFetch("/api/finance/audit/other-income", {
+        method: "POST",
+        body: JSON.stringify({
+          category: resolvedName.toLowerCase().replace(/\s+/g, "_"),
+          description: `${resolvedName} — ${otherType}`,
+          amount,
+          incomeDate: otherDate,
+          paymentMode: otherMode === "online" ? "online" : "cash",
+          transactionReference: otherMode === "online" ? otherTransactionId.trim() : undefined,
+        }),
+      });
+      setOtherCategory("Hostel");
+      setCustomName("");
+      setOtherType("Income");
+      setOtherAmount("");
+      setOtherMode("offline");
+      setOtherTransactionId("");
+      showToast("Ledger entry recorded successfully.");
+      loadAuditData(); // refresh table from DB
+    } catch (err) {
+      showToast(err.message || "Failed to record entry.");
+    }
   };
+
 
   return (
     <FinanceShell title="Finance Audit">
