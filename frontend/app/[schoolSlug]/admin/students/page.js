@@ -24,6 +24,7 @@ export default function AdminStudentsPage() {
     lastName: "",
     email: "",
     className: "10",
+    monthlyFee: "",
   });
   const [formError, setFormError] = useState("");
 
@@ -67,7 +68,7 @@ export default function AdminStudentsPage() {
         }),
       });
       setIsModalOpen(false);
-      setFormData({ firstName: "", middleName: "", lastName: "", email: "", className: "10" });
+      setFormData({ firstName: "", middleName: "", lastName: "", email: "", className: "10", monthlyFee: "" });
       loadStudents(); // Refresh the list
     } catch (err) {
       setFormError(err.message || "Failed to create student");
@@ -86,9 +87,7 @@ export default function AdminStudentsPage() {
           </div>
           
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button><UserPlus className="mr-2 size-4" /> Add New Student</Button>
-            </DialogTrigger>
+            <DialogTrigger render={<Button><UserPlus className="mr-2 size-4" /> Add New Student</Button>} />
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add New Student</DialogTitle>
@@ -135,9 +134,18 @@ export default function AdminStudentsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold">Email Address *</label>
-                  <Input name="email" type="email" required value={formData.email} onChange={handleInputChange} placeholder="student@example.com" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold">Email Address *</label>
+                    <Input name="email" type="email" required value={formData.email} onChange={handleInputChange} placeholder="student@example.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold">Total Monthly Fee *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₹</span>
+                      <Input name="monthlyFee" type="number" required min="0" step="0.01" value={formData.monthlyFee} onChange={handleInputChange} className="pl-7" placeholder="0.00" />
+                    </div>
+                  </div>
                 </div>
 
                 <DialogFooter className="mt-6">
@@ -220,6 +228,7 @@ export default function AdminStudentsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead className="text-right">Monthly Fee</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Joined</TableHead>
               </TableRow>
@@ -227,7 +236,7 @@ export default function AdminStudentsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center">
+                  <TableCell colSpan={7} className="h-32 text-center">
                     <div className="flex items-center justify-center text-muted-foreground gap-2">
                       <Loader2 className="size-5 animate-spin" /> Loading students...
                     </div>
@@ -235,13 +244,13 @@ export default function AdminStudentsPage() {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-rose-500">
+                  <TableCell colSpan={7} className="h-32 text-center text-rose-500">
                     {error}
                   </TableCell>
                 </TableRow>
               ) : students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                     No students found.
                   </TableCell>
                 </TableRow>
@@ -260,6 +269,9 @@ export default function AdminStudentsPage() {
                       {student.class_name ? `Class ${student.class_name}` : "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{student.email}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      ₹{parseFloat(student.monthly_fee || 0).toFixed(2)}
+                    </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${student.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
                         {student.is_active ? "Active" : "Inactive"}

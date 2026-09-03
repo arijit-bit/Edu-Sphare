@@ -40,7 +40,7 @@ class AdminService {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const usersQuery = `
-      SELECT id, email, first_name, middle_name, last_name, uid, class_name, role, is_active, status, last_login_at, created_at
+      SELECT id, email, first_name, middle_name, last_name, uid, class_name, monthly_fee, role, is_active, status, last_login_at, created_at
       FROM public.users
       ${whereClause}
       ORDER BY created_at DESC
@@ -68,7 +68,7 @@ class AdminService {
     };
   }
 
-  async createUser({ email, password, firstName, middleName, lastName, className, role, schoolId = '00000000-0000-0000-0000-000000000001' }) {
+  async createUser({ email, password, firstName, middleName, lastName, className, monthlyFee, role, schoolId = '00000000-0000-0000-0000-000000000001' }) {
     const existing = await db.query('SELECT id FROM public.users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       throw ApiError.conflict('An account with this email already exists');
@@ -104,11 +104,23 @@ class AdminService {
       const classVal = parseInt((className || '').replace(/[^0-9]/g, ''), 10) || 10;
       const passYear = new Date().getFullYear() + (10 - classVal);
       const shortYear = passYear % 100;
+      const cohortPrefix = `${shortYear}${schoolPrefix}`;
 
-      const seqRes = await db.query("SELECT nextval('student_uid_seq') as seq");
-      const seqVal = seqRes.rows[0].seq;
+      const maxUidRes = await db.query(
+        "SELECT uid FROM public.users WHERE uid LIKE $1 ORDER BY uid DESC LIMIT 1",
+        [`${cohortPrefix}%`]
+      );
 
-      uid = `${shortYear}${schoolPrefix}${seqVal}`;
+      let seqVal = 10001;
+      if (maxUidRes.rows.length > 0) {
+        const lastUid = maxUidRes.rows[0].uid;
+        const lastSeq = parseInt(lastUid.substring(lastUid.length - 5), 10);
+        if (!isNaN(lastSeq)) {
+          seqVal = lastSeq + 1;
+        }
+      }
+
+      uid = `${cohortPrefix}${seqVal}`;
     }
 
     if (!actualPassword) {
@@ -137,10 +149,11 @@ class AdminService {
         updated_at,
         school_id,
         uid,
-        class_name
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', true, now(), now(), $8, $9, $10)
-      RETURNING id, email, first_name, middle_name, last_name, uid, class_name, role, is_active, created_at, school_id`,
-      [email, passwordHash, firstName, middleName, lastName, fullName, role, schoolId, uid, className]
+        class_name,
+        monthly_fee
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', true, now(), now(), $8, $9, $10, $11)
+      RETURNING id, email, first_name, middle_name, last_name, uid, class_name, monthly_fee, role, is_active, created_at, school_id`,
+      [email, passwordHash, firstName, middleName, lastName, fullName, role, schoolId, uid, className, monthlyFee || 0]
     );
 
     logger.info(`Admin created user: ${email} with role: ${role}`);

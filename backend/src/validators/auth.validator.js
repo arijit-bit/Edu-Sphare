@@ -32,6 +32,7 @@ const adminCreateUserSchema = z.object({
     middleName: z.string().trim().optional(),
     lastName: z.string().min(1, 'Last name is required').trim(),
     className: z.string().trim().optional(),
+    monthlyFee: z.number().min(0).optional(),
     role: z.enum(ALL_ROLES, {
       errorMap: () => ({ message: `Role must be one of: ${ALL_ROLES.join(', ')}` }),
     }),
