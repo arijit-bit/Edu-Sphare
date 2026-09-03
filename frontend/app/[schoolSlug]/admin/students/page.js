@@ -35,7 +35,6 @@ export default function AdminStudentsPage() {
 
   async function loadStudents() {
     try {
-      setLoading(true);
       const res = await apiFetch(`/api/admin/users?role=student&limit=50`);
       setStudents(res.users || []);
     } catch (err) {
@@ -46,6 +45,7 @@ export default function AdminStudentsPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStudents();
   }, []);
 
