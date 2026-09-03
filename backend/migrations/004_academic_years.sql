@@ -44,10 +44,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_academic_years_label
 
 CREATE INDEX IF NOT EXISTS idx_academic_years_school ON public.academic_years(school_id);
 
--- Seed a default academic year for the default school (using UPDATE on existing row to avoid constraint issues)
-UPDATE public.academic_years 
-SET is_active = true, label = name, start_date = starts_on, end_date = ends_on
-WHERE school_id = '00000000-0000-0000-0000-000000000001' AND name = '2025-2026';
+-- Seed a default academic year for the default school
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='academic_years' AND column_name='name') THEN
+    EXECUTE 'UPDATE public.academic_years SET is_active = true, label = name, start_date = starts_on, end_date = ends_on WHERE school_id = ''00000000-0000-0000-0000-000000000001'' AND name = ''2025-2026'' AND label IS NULL';
+  END IF;
+END $$;
+
+INSERT INTO public.academic_years (school_id, label, start_date, end_date, is_active)
+VALUES ('00000000-0000-0000-0000-000000000001', '2025-2026', '2025-04-01', '2026-03-31', true)
+ON CONFLICT (school_id, label) DO NOTHING;
 
 ALTER TABLE public.academic_years ENABLE ROW LEVEL SECURITY;
 
