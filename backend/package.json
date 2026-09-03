@@ -8,7 +8,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest --runInBand",
     "test:auth": "node scripts/test-auth.js",
-    "migrate": "node -e \"const fs = require('fs'); const { pool } = require('./src/config/database'); const sql = fs.readFileSync('./migrations/001_auth_schema.sql', 'utf8'); pool.query(sql).then(() => { console.log('Migration successful'); process.exit(0); }).catch((err) => { console.error(err); process.exit(1); });\""
+    "migrate": "node scripts/migrate.js"
   },
   "keywords": [],
   "author": "",
