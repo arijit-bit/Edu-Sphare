@@ -49,6 +49,16 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='academic_years' AND column_name='name') THEN
     EXECUTE 'UPDATE public.academic_years SET is_active = true, label = name, start_date = starts_on, end_date = ends_on WHERE school_id = ''00000000-0000-0000-0000-000000000001'' AND name = ''2025-2026'' AND label IS NULL';
+    EXECUTE 'ALTER TABLE public.academic_years ALTER COLUMN name DROP NOT NULL';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='academic_years' AND column_name='starts_on') THEN
+    EXECUTE 'ALTER TABLE public.academic_years ALTER COLUMN starts_on DROP NOT NULL';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='academic_years' AND column_name='ends_on') THEN
+    EXECUTE 'ALTER TABLE public.academic_years ALTER COLUMN ends_on DROP NOT NULL';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='academic_years' AND column_name='status') THEN
+    EXECUTE 'ALTER TABLE public.academic_years ALTER COLUMN status DROP NOT NULL';
   END IF;
 END $$;
 

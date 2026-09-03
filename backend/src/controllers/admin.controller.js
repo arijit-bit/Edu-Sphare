@@ -37,12 +37,15 @@ class AdminController {
    */
   async createUser(req, res, next) {
     try {
-      const { email, password, firstName, lastName, role } = req.body;
+      const { email, password, firstName, middleName, lastName, className, monthlyFee, role } = req.body;
       const user = await adminService.createUser({
         email,
         password,
         firstName,
+        middleName,
         lastName,
+        className,
+        monthlyFee,
         role,
       });
 
