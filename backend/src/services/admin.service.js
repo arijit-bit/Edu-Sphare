@@ -68,7 +68,7 @@ class AdminService {
     };
   }
 
-  async createUser({ email, password, firstName, lastName, role }) {
+  async createUser({ email, password, firstName, lastName, role, schoolId = '00000000-0000-0000-0000-000000000001' }) {
     const existing = await db.query('SELECT id FROM public.users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       throw ApiError.conflict('An account with this email already exists');
@@ -88,10 +88,11 @@ class AdminService {
         status, 
         is_active, 
         created_at, 
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'active', true, now(), now())
-      RETURNING id, email, first_name, last_name, role, is_active, created_at`,
-      [email, passwordHash, firstName, lastName, fullName, role]
+        updated_at,
+        school_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'active', true, now(), now(), $7)
+      RETURNING id, email, first_name, last_name, role, is_active, created_at, school_id`,
+      [email, passwordHash, firstName, lastName, fullName, role, schoolId]
     );
 
     logger.info(`Admin created user: ${email} with role: ${role}`);

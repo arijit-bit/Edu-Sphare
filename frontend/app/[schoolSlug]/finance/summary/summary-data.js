@@ -9,41 +9,11 @@ import {
   WalletCards,
 } from "lucide-react";
 
+// Tab navigation
 export const summaryTabs = [
-  { label: "Summary", href: "/finance/summary" },
+  { label: "Summary",  href: "/finance/summary" },
   { label: "Expenses", href: "/finance/summary/expenses" },
   { label: "Earnings", href: "/finance/summary/earnings" },
-];
-
-export const summaryMetrics = [
-  {
-    label: "Total Earnings",
-    value: "₹8.96Cr",
-    delta: "+18.4% vs last year",
-    tone: "green",
-    icon: ArrowUpCircle,
-  },
-  {
-    label: "Total Expenses",
-    value: "₹5.74Cr",
-    delta: "+8.6% vs last year",
-    tone: "rose",
-    icon: ArrowDownCircle,
-  },
-  {
-    label: "Net Surplus",
-    value: "₹3.22Cr",
-    delta: "35.9% margin maintained",
-    tone: "blue",
-    icon: WalletCards,
-  },
-  {
-    label: "Collection Efficiency",
-    value: "92.4%",
-    delta: "Auditor target exceeded",
-    tone: "teal",
-    icon: BadgeIndianRupee,
-  },
 ];
 
 export const earningsCards = [
@@ -60,30 +30,6 @@ export const expenseCards = [
   { label: "Maintenance Cost", value: "₹38.4L", delta: "-4.8% optimized", icon: BadgeIndianRupee, tone: "green" },
 ];
 
-export const combinedTrendData = [
-  { label: "Jan", earnings: 62, expenses: 45, surplus: 17 },
-  { label: "Feb", earnings: 71, expenses: 52, surplus: 19 },
-  { label: "Mar", earnings: 74, expenses: 49, surplus: 25 },
-  { label: "Apr", earnings: 68, expenses: 57, surplus: 11 },
-  { label: "May", earnings: 92, expenses: 58, surplus: 34 },
-  { label: "Jun", earnings: 88, expenses: 61, surplus: 27 },
-  { label: "Jul", earnings: 95, expenses: 64, surplus: 31 },
-  { label: "Aug", earnings: 108, expenses: 82, surplus: 26 },
-  { label: "Sep", earnings: 118, expenses: 69, surplus: 49 },
-  { label: "Oct", earnings: 126, expenses: 88, surplus: 38 },
-  { label: "Nov", earnings: 142, expenses: 74, surplus: 68 },
-  { label: "Dec", earnings: 154, expenses: 92, surplus: 62 },
-];
-
-export const categoryBalanceData = [
-  { label: "Tuition Fees", earnings: 64, expenses: 0 },
-  { label: "Transport", earnings: 11, expenses: 12 },
-  { label: "Admissions", earnings: 9, expenses: 3 },
-  { label: "Payroll", earnings: 0, expenses: 57 },
-  { label: "Maintenance", earnings: 0, expenses: 15 },
-  { label: "Facilities", earnings: 7, expenses: 13 },
-];
-
 export const expenseDistribution = [
   { key: "teacher", label: "Teacher Salary", value: 43, color: "#3d5af1" },
   { key: "staff", label: "Staff Salary", value: 14, color: "#0d9488" },
@@ -96,33 +42,75 @@ export const expenseDistribution = [
   { key: "misc", label: "Miscellaneous", value: 3, color: "#94a3b8" },
 ];
 
-export const auditorHighlights = [
-  {
-    label: "Best Collection Window",
-    title: "November collection sprint",
-    value: "₹1.42Cr earnings",
-    tone: "green",
-    icon: TrendingUp,
-  },
-  {
-    label: "Largest Cost Center",
-    title: "Senior wing payroll",
-    value: "₹3.42Cr annual outflow",
-    tone: "rose",
-    icon: ReceiptText,
-  },
-  {
-    label: "Risk Watch",
-    title: "Pending student dues",
-    value: "₹7.8L still outstanding",
-    tone: "amber",
-    icon: BadgeIndianRupee,
-  },
-  {
-    label: "Auditor View",
-    title: "Healthy operating margin",
-    value: "Surplus trending upward",
-    tone: "teal",
-    icon: WalletCards,
-  },
-];
+/**
+ * Transform raw API summary data into the shape expected by the Summary page UI.
+ * This is the single mapping point — UI never reads raw API fields directly.
+ */
+export function transformSummaryMetrics(apiMetrics) {
+  if (!apiMetrics) return [];
+  const fmt = (n) => {
+    const v = parseFloat(n ?? 0);
+    if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(2)}Cr`;
+    if (v >= 100_000)    return `₹${(v / 100_000).toFixed(2)}L`;
+    return `₹${v.toLocaleString("en-IN")}`;
+  };
+  return [
+    {
+      label: "Total Earnings",
+      value: fmt(apiMetrics.totalEarnings),
+      delta: "+vs last year",
+      tone: "green",
+      icon: ArrowUpCircle,
+    },
+    {
+      label: "Total Expenses",
+      value: fmt(apiMetrics.totalExpenses),
+      delta: "This academic year",
+      tone: "rose",
+      icon: ArrowDownCircle,
+    },
+    {
+      label: "Net Surplus",
+      value: fmt(apiMetrics.netSurplus),
+      delta: `${apiMetrics.collectionEfficiency ?? 0}% margin`,
+      tone: "blue",
+      icon: WalletCards,
+    },
+    {
+      label: "Collection Efficiency",
+      value: `${apiMetrics.collectionEfficiency ?? 0}%`,
+      delta: "Fee collection rate",
+      tone: "teal",
+      icon: BadgeIndianRupee,
+    },
+  ];
+}
+
+export function transformEarningsCards(apiEarning) {
+  if (!apiEarning) return [];
+  const fmt = (n) => {
+    const v = parseFloat(n ?? 0);
+    if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(2)}Cr`;
+    if (v >= 100_000)    return `₹${(v / 100_000).toFixed(2)}L`;
+    return `₹${v.toLocaleString("en-IN")}`;
+  };
+  return [
+    { label: "Student Fees Collected", value: fmt(apiEarning.feeCollected),  delta: "This academic year", icon: ReceiptText, tone: "purple" },
+    { label: "Admission Fees",         value: fmt(apiEarning.admissionFees), delta: "New admissions",     icon: TrendingUp, tone: "cyan" },
+    { label: "Other Income",           value: fmt(apiEarning.otherIncome),   delta: "Hostel, events etc", icon: Coins,      tone: "blue" },
+  ];
+}
+
+export function transformExpenseCards(apiMetrics, apiEarningSummary) {
+  if (!apiMetrics) return [];
+  const fmt = (n) => {
+    const v = parseFloat(n ?? 0);
+    if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(2)}Cr`;
+    if (v >= 100_000)    return `₹${(v / 100_000).toFixed(2)}L`;
+    return `₹${v.toLocaleString("en-IN")}`;
+  };
+  return [
+    { label: "Total Expenses This Year", value: fmt(apiMetrics.totalExpenses), delta: "This academic year", icon: TrendingDown,       tone: "rose" },
+    { label: "Net Surplus",              value: fmt(apiMetrics.netSurplus),     delta: "Revenue - Expenses", icon: BadgeIndianRupee,  tone: "green" },
+  ];
+}
