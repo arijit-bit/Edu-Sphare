@@ -67,6 +67,7 @@ export default function StudentPaymentsPage() {
     }
   }, [monthFilter, classFilter, sectionFilter, statusFilter, search]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPayments(); }, [loadPayments]);
 
   const handleSendReminder = (name) => showToast(`Reminder sent to parents of ${name}!`);

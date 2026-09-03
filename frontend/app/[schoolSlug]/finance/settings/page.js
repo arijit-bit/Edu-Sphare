@@ -106,6 +106,11 @@ export default function FinanceSettingsPage() {
 
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
+  const triggerToast = useCallback((message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  }, []);
+
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
@@ -117,14 +122,10 @@ export default function FinanceSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [triggerToast]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadSettings(); }, [loadSettings]);
-
-  const triggerToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
-  };
 
   const handleSave = async (title) => {
     setSaving(true);

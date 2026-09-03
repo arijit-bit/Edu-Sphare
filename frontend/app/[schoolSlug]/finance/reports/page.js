@@ -74,6 +74,7 @@ export default function ReportsPage() {
     }
   }, [statusFilter, search]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadReports(); }, [loadReports]);
 
   const triggerToast = (message, type = "success") => {

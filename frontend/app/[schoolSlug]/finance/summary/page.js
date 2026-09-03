@@ -56,6 +56,7 @@ export default function FinanceSummaryPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
   const metrics       = data?.metrics ?? {};

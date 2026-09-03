@@ -56,6 +56,7 @@ export default function TeacherPaymentsPage() {
     }
   }, [monthFilter, deptFilter, statusFilter, salaryTypeFilter, search]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPayroll(); }, [loadPayroll]);
 
   const handleMarkAsPaid = async (salaryPaymentId, name) => {

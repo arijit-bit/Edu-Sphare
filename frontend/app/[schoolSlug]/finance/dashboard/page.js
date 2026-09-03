@@ -60,6 +60,7 @@ export default function DashboardOverviewPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
   // Derived values from real data

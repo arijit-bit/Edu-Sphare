@@ -142,6 +142,11 @@ export default function FinanceAuditPage() {
   const [loading, setLoading]         = useState(true);
   const [toastMessage, setToastMessage] = useState("");
 
+  const showToast = useCallback((message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(""), 3000);
+  }, []);
+
   // Load all three data sources in parallel when month changes
   const loadAuditData = useCallback(async () => {
     setLoading(true);
@@ -159,8 +164,9 @@ export default function FinanceAuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, showToast]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadAuditData(); }, [loadAuditData]);
 
 
@@ -191,11 +197,6 @@ export default function FinanceAuditPage() {
     if (Number.isNaN(parsed.getTime())) return "Select date";
     return format(parsed, "PPP");
   }, [otherDate]);
-
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(""), 3000);
-  };
 
   const teacherPendingCount = teacherRows.filter((row) => row.status !== "Paid").length;
   const studentPendingCount = studentRows.filter((row) => row.status !== "Paid").length;
