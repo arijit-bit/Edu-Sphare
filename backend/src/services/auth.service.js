@@ -30,7 +30,7 @@ class AuthService {
   /**
    * Register a new user (public registration defaults strictly to student).
    */
-  async register({ email, password, firstName, lastName, role = ROLES.STUDENT }) {
+  async register({ email, password, firstName, lastName, role = ROLES.STUDENT, schoolId = '00000000-0000-0000-0000-000000000001' }) {
     // Check if email already exists
     const existingUser = await db.query(
       'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
@@ -55,10 +55,11 @@ class AuthService {
         status, 
         is_active, 
         created_at, 
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'active', true, now(), now())
-      RETURNING id, email, first_name, last_name, role, is_active, created_at`,
-      [email, passwordHash, firstName, lastName, fullName, role]
+        updated_at,
+        school_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'active', true, now(), now(), $7)
+      RETURNING id, email, first_name, last_name, role, is_active, created_at, school_id`,
+      [email, passwordHash, firstName, lastName, fullName, role, schoolId]
     );
 
     const newUser = insertResult.rows[0];

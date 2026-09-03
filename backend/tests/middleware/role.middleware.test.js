@@ -19,10 +19,10 @@ describe('Middleware - Role-Based Access Control (RBAC)', () => {
     // Seed users directly into DB with specific roles for testing
     for (const [key, user] of Object.entries(users)) {
       const res = await pool.query(
-        `INSERT INTO public.users (email, password_hash, first_name, last_name, name, role, status, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, 'active', true)
+        `INSERT INTO public.users (email, password_hash, first_name, last_name, name, role, status, is_active, school_id)
+         VALUES ($1, $2, $3, $4, $5, $6, 'active', true, $7)
          RETURNING id`,
-        [user.email, passwordHash, key, 'Test', `${key} Test`, user.role]
+        [user.email, passwordHash, key, 'Test', `${key} Test`, user.role, '00000000-0000-0000-0000-000000000001']
       );
       user.id = res.rows[0].id;
 
