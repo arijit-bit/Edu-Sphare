@@ -40,7 +40,7 @@ class AdminService {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const usersQuery = `
-      SELECT id, email, first_name, last_name, role, is_active, status, last_login_at, created_at
+      SELECT id, email, first_name, middle_name, last_name, uid, class_name, role, is_active, status, last_login_at, created_at
       FROM public.users
       ${whereClause}
       ORDER BY created_at DESC
@@ -68,20 +68,66 @@ class AdminService {
     };
   }
 
-  async createUser({ email, password, firstName, lastName, role, schoolId = '00000000-0000-0000-0000-000000000001' }) {
+  async createUser({ email, password, firstName, middleName, lastName, className, role, schoolId = '00000000-0000-0000-0000-000000000001' }) {
     const existing = await db.query('SELECT id FROM public.users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       throw ApiError.conflict('An account with this email already exists');
     }
 
-    const passwordHash = await hashPassword(password);
-    const fullName = `${firstName} ${lastName}`.trim();
+    let actualPassword = password;
+    let uid = null;
+
+    if (role === 'student') {
+      // 1. Password auto-generation
+      if (!actualPassword) {
+        const emailParts = email.split('@');
+        if (emailParts.length === 2) {
+          const namePart = emailParts[0];
+          const domainPart = emailParts[1];
+          const numberMatch = namePart.match(/(\d+)$/);
+          const numbersBeforeAt = numberMatch ? numberMatch[1] : '';
+          const nextLetterCaps = domainPart.charAt(0).toUpperCase();
+          actualPassword = `${lastName.toLowerCase()}${numbersBeforeAt}@${nextLetterCaps}`;
+        } else {
+          actualPassword = `${lastName.toLowerCase()}123@A`;
+        }
+      }
+
+      // 2. UID generation
+      const schoolRes = await db.query('SELECT slug FROM public.schools WHERE id = $1', [schoolId]);
+      let schoolPrefix = 'DEMO';
+      if (schoolRes.rows.length > 0) {
+        const slug = schoolRes.rows[0].slug.toUpperCase();
+        schoolPrefix = slug.split('-')[0].substring(0, 4);
+      }
+
+      const classVal = parseInt((className || '').replace(/[^0-9]/g, ''), 10) || 10;
+      const passYear = new Date().getFullYear() + (10 - classVal);
+      const shortYear = passYear % 100;
+
+      const seqRes = await db.query("SELECT nextval('student_uid_seq') as seq");
+      const seqVal = seqRes.rows[0].seq;
+
+      uid = `${shortYear}${schoolPrefix}${seqVal}`;
+    }
+
+    if (!actualPassword) {
+      throw ApiError.badRequest('Password is required for non-student roles');
+    }
+
+    const passwordHash = await hashPassword(actualPassword);
+    
+    const fullNameParts = [firstName];
+    if (middleName) fullNameParts.push(middleName);
+    fullNameParts.push(lastName);
+    const fullName = fullNameParts.join(' ').trim();
 
     const insertResult = await db.query(
       `INSERT INTO public.users (
         email, 
         password_hash, 
         first_name, 
+        middle_name,
         last_name, 
         name, 
         role, 
@@ -89,10 +135,12 @@ class AdminService {
         is_active, 
         created_at, 
         updated_at,
-        school_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'active', true, now(), now(), $7)
-      RETURNING id, email, first_name, last_name, role, is_active, created_at, school_id`,
-      [email, passwordHash, firstName, lastName, fullName, role, schoolId]
+        school_id,
+        uid,
+        class_name
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', true, now(), now(), $8, $9, $10)
+      RETURNING id, email, first_name, middle_name, last_name, uid, class_name, role, is_active, created_at, school_id`,
+      [email, passwordHash, firstName, middleName, lastName, fullName, role, schoolId, uid, className]
     );
 
     logger.info(`Admin created user: ${email} with role: ${role}`);
