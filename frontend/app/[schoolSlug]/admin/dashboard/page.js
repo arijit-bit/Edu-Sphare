@@ -22,6 +22,8 @@ import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { logout } from "@/lib/api";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const getNavItems = (schoolSlug) => [
   { label: "Dashboard",    href: `/${schoolSlug}/admin/dashboard`,  icon: LayoutDashboard },
@@ -66,16 +68,13 @@ export default function AdminDashboard() {
   return (
     <AdminShell title="Admin Dashboard">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Admin Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Full system overview — students, staff, finances, and operations.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm"><BarChart3 className="mr-2 size-4" />Reports</Button>
-          <Button size="sm"><UserPlus className="mr-2 size-4" />Add User</Button>
-        </div>
-      </div>
+      <PageHeader 
+        title="Admin Dashboard" 
+        description="Full system overview — students, staff, finances, and operations."
+      >
+        <Button variant="outline" size="sm" aria-label="View Reports"><BarChart3 className="mr-2 size-4" />Reports</Button>
+        <Button size="sm" aria-label="Add User"><UserPlus className="mr-2 size-4" />Add User</Button>
+      </PageHeader>
 
       {/* KPI Grid */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -107,7 +106,7 @@ export default function AdminDashboard() {
             <CardDescription>Navigate to all sub-portals from here.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { label: "Student Portal",  href: `/${schoolSlug}/student/dashboard`,  Icon: GraduationCap, cls: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"   },
                 { label: "Finance Portal",  href: `/${schoolSlug}/finance/dashboard`,  Icon: CreditCard,    cls: "bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800" },
@@ -160,28 +159,38 @@ export default function AdminDashboard() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y">
-            {recentActivity.map((item, i) => (
-              <div key={i} className="flex items-center gap-4 px-6 py-3 hover:bg-muted/30 transition-colors">
-                <Avatar className="size-8">
-                  <AvatarFallback className="text-xs font-bold bg-muted">
-                    {item.name.charAt(0)}{item.name.split(" ")[1]?.charAt(0) || ""}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">{item.action}</p>
+          {recentActivity.length === 0 ? (
+            <div className="p-6">
+              <EmptyState 
+                icon={Activity} 
+                title="No recent activity" 
+                description="Activity across the school will appear here."
+              />
+            </div>
+          ) : (
+            <div className="divide-y">
+              {recentActivity.map((item, i) => (
+                <div key={i} className="flex items-center gap-4 px-6 py-3 hover:bg-muted/30 transition-colors">
+                  <Avatar className="size-8 shrink-0">
+                    <AvatarFallback className="text-xs font-bold bg-muted">
+                      {item.name.charAt(0)}{item.name.split(" ")[1]?.charAt(0) || ""}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.action}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={cn("text-sm font-bold",
+                      item.status === "success" ? "text-emerald-600 dark:text-emerald-400" :
+                      item.status === "warning" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+                    )}>{item.amount}</p>
+                    <p className="text-xs text-muted-foreground">{item.time}</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className={cn("text-sm font-bold",
-                    item.status === "success" ? "text-emerald-600 dark:text-emerald-400" :
-                    item.status === "warning" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
-                  )}>{item.amount}</p>
-                  <p className="text-xs text-muted-foreground">{item.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </AdminShell>

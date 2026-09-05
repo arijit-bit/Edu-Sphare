@@ -24,8 +24,8 @@ function getNavItems(schoolSlug) {
     { label: "Students",  href: `${base}/students`,  icon: GraduationCap   },
     { label: "Teachers",  href: `${base}/teachers`,  icon: Users           },
     { label: "Finance",   href: `/${schoolSlug}/finance/dashboard`, icon: CreditCard },
-    { label: "Analytics", href: "#",                 icon: BarChart3       },
-    { label: "Settings",  href: "#",                 icon: Settings        },
+    { label: "Analytics", href: `${base}/analytics`, icon: BarChart3       },
+    { label: "Settings",  href: `${base}/settings`,  icon: Settings        },
   ];
 }
 
@@ -95,20 +95,20 @@ export function AdminShell({ children, title = "Admin Dashboard" }) {
       </Sheet>
 
       <div className="flex flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur px-4 md:px-6">
-          <Button variant="ghost" size="icon" className="lg:hidden size-8" onClick={() => setMobileOpen(true)}><Menu className="size-4" /></Button>
-          <h1 className="text-sm font-semibold">{title}</h1>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur px-3 md:px-6">
+          <Button variant="ghost" size="icon" className="lg:hidden shrink-0 size-8" onClick={() => setMobileOpen(true)} aria-label="Open Menu"><Menu className="size-4" /></Button>
+          <h1 className="text-sm font-semibold truncate flex-1 min-w-0">{title}</h1>
           <div className="ml-auto flex items-center gap-1">
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input className="pl-9 h-8 w-56 text-sm" placeholder="Search students, staff…" />
             </div>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative size-9">
+            <Button variant="ghost" size="icon" className="relative shrink-0 size-9" aria-label="Notifications">
               <Bell className="size-4" />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive" />
+              <span className="absolute top-2 right-2 size-1.5 rounded-full bg-rose-500" />
             </Button>
-            <Avatar className="size-8 cursor-pointer">
+            <Avatar className="size-8 cursor-pointer shrink-0">
               <AvatarFallback className="bg-rose-600 text-white text-xs font-bold">SA</AvatarFallback>
             </Avatar>
           </div>
