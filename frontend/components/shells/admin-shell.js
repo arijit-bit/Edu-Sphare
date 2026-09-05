@@ -29,6 +29,17 @@ function getNavItems(schoolSlug) {
   ];
 }
 
+function getMobileNavItems(schoolSlug) {
+  const base = `/${schoolSlug}/admin`;
+  return [
+    { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
+    { label: "Students",  href: `${base}/students`,  icon: GraduationCap   },
+    { label: "Teachers",  href: `${base}/teachers`,  icon: Users           },
+    { label: "Finance",   href: `/${schoolSlug}/finance/dashboard`, icon: CreditCard },
+    { label: "Settings",  href: `${base}/settings`,  icon: Settings        },
+  ];
+}
+
 /* ── Sidebar Content ── */
 function SidebarContent({ pathname, onNav }) {
   const { schoolSlug = "demo-school" } = useParams() || {};
@@ -81,6 +92,7 @@ export function AdminShell({ children, title = "Admin Dashboard" }) {
   const { schoolSlug = "demo-school" } = useParams() || {};
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavItems = getMobileNavItems(schoolSlug);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -114,10 +126,38 @@ export function AdminShell({ children, title = "Admin Dashboard" }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 space-y-6 animate-slide-up">
+        <main className="flex-1 p-4 md:p-6 pb-20 sm:pb-20 lg:pb-6 space-y-6 animate-slide-up">
           {children}
         </main>
       </div>
+
+      {/* ══ MOBILE BOTTOM NAV ══ */}
+      <nav
+        className="fixed bottom-0 left-0 z-50 grid w-full grid-cols-5 border-t bg-card/95 px-2 py-1 backdrop-blur-md lg:hidden"
+        aria-label="Mobile navigation"
+      >
+        {mobileNavItems.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              aria-label={item.label}
+              className={cn(
+                "flex min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold transition-all duration-200 sm:text-[10px]",
+                active
+                  ? "bg-rose-600/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <Icon className="size-4.5 sm:size-5" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
