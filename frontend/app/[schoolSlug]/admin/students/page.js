@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Search, Filter, UserPlus } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Loader2, Search, Filter, UserPlus, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default function AdminStudentsPage() {
   const [students, setStudents] = useState([]);
@@ -32,6 +35,7 @@ export default function AdminStudentsPage() {
   const [classFilter, setClassFilter] = useState("all");
   const [sectionFilter, setSectionFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("roll-desc");
+  const [showFilters, setShowFilters] = useState(false);
 
   async function loadStudents() {
     try {
@@ -81,15 +85,15 @@ export default function AdminStudentsPage() {
   return (
     <AdminShell title="Students">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Students Directory</h2>
-            <p className="text-sm text-muted-foreground">Manage and view all enrolled students.</p>
-          </div>
-          
+        <PageHeader 
+          title="Students Directory" 
+          description="Manage and view all enrolled students."
+        >
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger render={<Button><UserPlus className="mr-2 size-4" /> Add New Student</Button>} />
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogTrigger asChild>
+              <Button aria-label="Add New Student"><UserPlus className="mr-2 size-4" /> Add New Student</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Student</DialogTitle>
                 <DialogDescription>
@@ -159,11 +163,16 @@ export default function AdminStudentsPage() {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
+        </PageHeader>
 
         {/* Filters and Sorting UI */}
-        <div className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+        <div className="sm:hidden mb-2">
+          <Button variant="outline" className="w-full" onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters} aria-controls="filters-section">
+            <Filter className="mr-2 size-4" /> {showFilters ? "Hide Filters" : "Show Filters"}
+          </Button>
+        </div>
+        <div id="filters-section" className={cn("rounded-xl border bg-card p-4 flex-col sm:flex-row flex-wrap gap-4 items-end", showFilters ? "flex" : "hidden sm:flex")}>
+          <div className="flex-1 w-full min-w-[200px]">
             <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -251,8 +260,13 @@ export default function AdminStudentsPage() {
                 </TableRow>
               ) : students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    No students found.
+                  <TableCell colSpan={7} className="h-64 text-center">
+                    <EmptyState 
+                      icon={Users} 
+                      title="No students found" 
+                      description="You haven't added any students yet, or none match your filters."
+                      action={<Button onClick={() => setIsModalOpen(true)}><UserPlus className="mr-2 size-4" /> Add New Student</Button>}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

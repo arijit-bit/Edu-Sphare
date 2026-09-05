@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, Filter } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Loader2, Search, Filter, UserPlus, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState([]);
@@ -17,6 +20,7 @@ export default function AdminTeachersPage() {
   // Mock states for UI
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     async function loadTeachers() {
@@ -37,17 +41,21 @@ export default function AdminTeachersPage() {
   return (
     <AdminShell title="Teachers">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Teachers Directory</h2>
-            <p className="text-sm text-muted-foreground">Manage and view all teaching staff.</p>
-          </div>
-          <Button>Add New Teacher</Button>
-        </div>
+        <PageHeader 
+          title="Teachers Directory" 
+          description="Manage and view all teaching staff."
+        >
+          <Button aria-label="Add New Teacher"><UserPlus className="mr-2 size-4" /> Add New Teacher</Button>
+        </PageHeader>
 
         {/* Filters and Sorting UI */}
-        <div className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+        <div className="sm:hidden mb-2">
+          <Button variant="outline" className="w-full" onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters} aria-controls="filters-section">
+            <Filter className="mr-2 size-4" /> {showFilters ? "Hide Filters" : "Show Filters"}
+          </Button>
+        </div>
+        <div id="filters-section" className={cn("rounded-xl border bg-card p-4 flex-col sm:flex-row flex-wrap gap-4 items-end", showFilters ? "flex" : "hidden sm:flex")}>
+          <div className="flex-1 w-full min-w-[200px]">
             <label className="text-xs font-semibold uppercase text-muted-foreground mb-1.5 block">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -119,8 +127,13 @@ export default function AdminTeachersPage() {
                 </TableRow>
               ) : teachers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                    No teachers found.
+                  <TableCell colSpan={4} className="h-64 text-center">
+                    <EmptyState 
+                      icon={Users} 
+                      title="No teachers found" 
+                      description="You haven't added any teachers yet, or none match your filters."
+                      action={<Button><UserPlus className="mr-2 size-4" /> Add New Teacher</Button>}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

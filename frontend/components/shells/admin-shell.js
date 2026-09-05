@@ -24,8 +24,19 @@ function getNavItems(schoolSlug) {
     { label: "Students",  href: `${base}/students`,  icon: GraduationCap   },
     { label: "Teachers",  href: `${base}/teachers`,  icon: Users           },
     { label: "Finance",   href: `/${schoolSlug}/finance/dashboard`, icon: CreditCard },
-    { label: "Analytics", href: "#",                 icon: BarChart3       },
-    { label: "Settings",  href: "#",                 icon: Settings        },
+    { label: "Analytics", href: `${base}/analytics`, icon: BarChart3       },
+    { label: "Settings",  href: `${base}/settings`,  icon: Settings        },
+  ];
+}
+
+function getMobileNavItems(schoolSlug) {
+  const base = `/${schoolSlug}/admin`;
+  return [
+    { label: "Dashboard", href: `${base}/dashboard`, icon: LayoutDashboard },
+    { label: "Students",  href: `${base}/students`,  icon: GraduationCap   },
+    { label: "Teachers",  href: `${base}/teachers`,  icon: Users           },
+    { label: "Finance",   href: `/${schoolSlug}/finance/dashboard`, icon: CreditCard },
+    { label: "Settings",  href: `${base}/settings`,  icon: Settings        },
   ];
 }
 
@@ -81,6 +92,7 @@ export function AdminShell({ children, title = "Admin Dashboard" }) {
   const { schoolSlug = "demo-school" } = useParams() || {};
   const pathname = usePathname() || "";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavItems = getMobileNavItems(schoolSlug);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -95,29 +107,57 @@ export function AdminShell({ children, title = "Admin Dashboard" }) {
       </Sheet>
 
       <div className="flex flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur px-4 md:px-6">
-          <Button variant="ghost" size="icon" className="lg:hidden size-8" onClick={() => setMobileOpen(true)}><Menu className="size-4" /></Button>
-          <h1 className="text-sm font-semibold">{title}</h1>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur px-3 md:px-6">
+          <Button variant="ghost" size="icon" className="lg:hidden shrink-0 size-8" onClick={() => setMobileOpen(true)} aria-label="Open Menu"><Menu className="size-4" /></Button>
+          <h1 className="text-sm font-semibold truncate flex-1 min-w-0">{title}</h1>
           <div className="ml-auto flex items-center gap-1">
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input className="pl-9 h-8 w-56 text-sm" placeholder="Search students, staff…" />
             </div>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative size-9">
+            <Button variant="ghost" size="icon" className="relative shrink-0 size-9" aria-label="Notifications">
               <Bell className="size-4" />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive" />
+              <span className="absolute top-2 right-2 size-1.5 rounded-full bg-rose-500" />
             </Button>
-            <Avatar className="size-8 cursor-pointer">
+            <Avatar className="size-8 cursor-pointer shrink-0">
               <AvatarFallback className="bg-rose-600 text-white text-xs font-bold">SA</AvatarFallback>
             </Avatar>
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 space-y-6 animate-slide-up">
+        <main className="flex-1 p-4 md:p-6 pb-20 sm:pb-20 lg:pb-6 space-y-6 animate-slide-up">
           {children}
         </main>
       </div>
+
+      {/* ══ MOBILE BOTTOM NAV ══ */}
+      <nav
+        className="fixed bottom-0 left-0 z-50 grid w-full grid-cols-5 border-t bg-card/95 px-2 py-1 backdrop-blur-md lg:hidden"
+        aria-label="Mobile navigation"
+      >
+        {mobileNavItems.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              aria-label={item.label}
+              className={cn(
+                "flex min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold transition-all duration-200 sm:text-[10px]",
+                active
+                  ? "bg-rose-600/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <Icon className="size-4.5 sm:size-5" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
